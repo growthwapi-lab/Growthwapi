@@ -119,17 +119,19 @@ export default function WebsiteRequestPage() {
       };
 
       // 1. Insert row into web_projects
+      const projectPayload = {
+        user_id: userId,
+        plan: selectedPlan.id,
+        brief: briefData,
+        stage: "requirement",
+        requested_domain: requestedDomain || null,
+        reference_sites: referenceSites || null,
+        final_payment_status: "pending",
+      };
+      console.log('Web project payload:', projectPayload);
       const { data: projectData, error: projectError } = await supabase
         .from("web_projects")
-        .insert({
-          user_id: userId,
-          plan: selectedPlan.name,
-          brief: briefData,
-          stage: "requirement",
-          requested_domain: requestedDomain || null,
-          reference_sites: referenceSites || null,
-          final_payment_status: "pending",
-        })
+        .insert(projectPayload)
         .select()
         .single();
 
@@ -139,15 +141,17 @@ export default function WebsiteRequestPage() {
       }
 
       // 2. Insert row into subscriptions
+      const subscriptionPayload = {
+        user_id: userId,
+        service: "website_dev",
+        plan: selectedPlan.id,
+        status: "pending_payment",
+        amount: advanceAmount,
+      };
+      console.log('Subscription payload:', subscriptionPayload);
       const { data: subData, error: subError } = await supabase
         .from("subscriptions")
-        .insert({
-          user_id: userId,
-          service: "website_dev",
-          plan: selectedPlan.name,
-          status: "pending_payment",
-          amount: advanceAmount,
-        })
+        .insert(subscriptionPayload)
         .select()
         .single();
 

@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-white text-slate-800 font-sans antialiased selection:bg-orange-500 selection:text-white;
+  }
+  
+  /* Sentence case for headings requirement */
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-brand-darkblue font-semibold tracking-tight;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}

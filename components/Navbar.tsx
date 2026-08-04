@@ -3,37 +3,52 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
+
+  const navLinks = [
+    { href: "/services", label: "Services" },
+    { href: "/pricing", label: "Pricing" },
+    { href: "/about", label: "About" },
+    { href: "/contact", label: "Contact" },
+  ];
+
+  const isActive = (path: string) => pathname === path;
 
   return (
-    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-100">
+    <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2 group">
+        <Link href="/" className="flex items-center gap-2 group shrink-0">
           <Image
             src="/logo.png"
             alt="GrowthWapi Logo"
-            width={180}
-            height={44}
-            className="h-[44px] w-auto object-contain transition-transform group-hover:scale-105"
+            width={144}
+            height={48}
+            className="h-[48px] w-[144px] object-contain transition-transform group-hover:scale-105"
             priority
           />
         </Link>
 
         {/* Desktop Nav Links */}
-        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-700">
-          <Link href="#services" className="hover:text-brand-blue transition-colors">
-            Services
-          </Link>
-          <Link href="#pricing" className="hover:text-brand-blue transition-colors">
-            Pricing
-          </Link>
-          <Link href="#about" className="hover:text-brand-blue transition-colors">
-            About
-          </Link>
+        <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`transition-colors ${
+                isActive(link.href)
+                  ? "text-brand-blue font-semibold"
+                  : "text-slate-700 hover:text-brand-blue"
+              }`}
+            >
+              {link.label}
+            </Link>
+          ))}
         </nav>
 
         {/* Action Buttons */}
@@ -65,27 +80,18 @@ export default function Navbar() {
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-white border-b border-slate-100 px-4 pt-2 pb-6 space-y-4">
-          <Link
-            href="#services"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block py-2 text-slate-700 hover:text-brand-blue font-medium"
-          >
-            Services
-          </Link>
-          <Link
-            href="#pricing"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block py-2 text-slate-700 hover:text-brand-blue font-medium"
-          >
-            Pricing
-          </Link>
-          <Link
-            href="#about"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block py-2 text-slate-700 hover:text-brand-blue font-medium"
-          >
-            About
-          </Link>
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              onClick={() => setMobileMenuOpen(false)}
+              className={`block py-2 text-base font-medium ${
+                isActive(link.href) ? "text-brand-blue font-semibold" : "text-slate-700 hover:text-brand-blue"
+              }`}
+            >
+              {link.label}
+            </Link>
+          ))}
           <div className="pt-4 border-t border-slate-100 flex flex-col gap-3">
             <Link
               href="/login"

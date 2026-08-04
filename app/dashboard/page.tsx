@@ -3,7 +3,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import LogoutButton from "@/components/LogoutButton";
-import { MessageSquare, PhoneCall, Globe, ArrowUpRight, ShieldCheck } from "lucide-react";
+import WebsiteDevCard, { WebProjectData } from "@/components/WebsiteDevCard";
+import { MessageSquare, PhoneCall, ArrowUpRight, ShieldCheck } from "lucide-react";
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -23,7 +24,31 @@ export default async function DashboardPage() {
 
   const businessName = user.user_metadata?.business_name || "Your Business";
 
-  const services = [
+  // Query web_projects for the logged in user
+  let initialProject: WebProjectData | null = null;
+  try {
+    const { data, error } = await supabase
+      .from("web_projects")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (data && !error) {
+      initialProject = {
+        id: data.id,
+        plan: data.plan,
+        stage: data.stage || "requirement",
+        final_payment_status: data.final_payment_status || "pending",
+        business_name: data.brief?.business_name || businessName,
+      };
+    }
+  } catch (err) {
+    console.error("Error fetching web_projects:", err);
+  }
+
+  const otherServices = [
     {
       id: "whatsapp",
       title: "WhatsApp API",
@@ -36,12 +61,6 @@ export default async function DashboardPage() {
       icon: PhoneCall,
       description: "Autonomous voice AI handling inbound & outbound calls.",
     },
-    {
-      id: "web-dev",
-      title: "Website Design & Dev",
-      icon: Globe,
-      description: "Custom mobile-responsive site with database integration.",
-    },
   ];
 
   return (
@@ -53,9 +72,9 @@ export default async function DashboardPage() {
             <Image
               src="/logo.png"
               alt="GrowthWapi Logo"
-              width={160}
-              height={44}
-              className="h-[40px] w-auto object-contain"
+              width={144}
+              height={48}
+              className="h-[40px] w-[120px] object-contain"
               priority
             />
           </Link>
@@ -94,7 +113,7 @@ export default async function DashboardPage() {
               Your Growth Services
             </h2>
             <Link
-              href="/#pricing"
+              href="/pricing"
               className="text-xs font-semibold text-brand-orange hover:underline flex items-center gap-1"
             >
               Browse all plans
@@ -103,7 +122,11 @@ export default async function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {services.map((service) => {
+            {/* Website Dev Card (interactive with 5-stage stepper) */}
+            <WebsiteDevCard initialProject={initialProject} userId={user.id} />
+
+            {/* Other Services (WhatsApp & AI Calling) */}
+            {otherServices.map((service) => {
               const Icon = service.icon;
               return (
                 <div
@@ -128,7 +151,7 @@ export default async function DashboardPage() {
 
                   <div className="mt-6 pt-4 border-t border-slate-100">
                     <Link
-                      href="/#pricing"
+                      href="/pricing"
                       className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold text-brand-blue border border-brand-blue hover:bg-brand-blue hover:text-white transition-all text-center block"
                     >
                       View Plans

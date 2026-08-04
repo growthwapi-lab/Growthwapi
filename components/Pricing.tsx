@@ -17,6 +17,8 @@ export default function Pricing() {
 
   const whatsappPricing = {
     note: "Overage: ₹0.20 per utility/service message, ₹1.20 per marketing message",
+    ctaHref: "/signup",
+    ctaTextPrefix: "Get Started with",
     tiers: [
       {
         name: "Starter",
@@ -61,6 +63,8 @@ export default function Pricing() {
 
   const aiCallingPricing = {
     note: "Fully managed setup — live within 2 days of payment and requirements submission",
+    ctaHref: "/signup",
+    ctaTextPrefix: "Get Started with",
     tiers: [
       {
         name: "Starter",
@@ -104,7 +108,9 @@ export default function Pricing() {
   };
 
   const webDevPricing = {
-    note: "One-time payment — zero monthly hosting lock-in. Full source code ownership.",
+    note: "50% advance due upon request, 50% remaining after final review & handover.",
+    ctaHref: "/dashboard/website-request",
+    ctaTextPrefix: "Request",
     tiers: [
       {
         name: "Starter",
@@ -243,14 +249,14 @@ export default function Pricing() {
 
               <div className="mt-8 pt-6 border-t border-slate-100">
                 <Link
-                  href="/signup"
+                  href={currentPricing.ctaHref}
                   className={`w-full py-3.5 px-6 rounded-full font-semibold text-sm transition-all text-center block ${
                     tier.popular
                       ? "bg-brand-orange hover:bg-orange-600 text-white shadow-md hover:shadow-lg"
                       : "bg-slate-100 hover:bg-brand-blue text-brand-darkblue hover:text-white"
                   }`}
                 >
-                  Get Started with {tier.name}
+                  {currentPricing.ctaTextPrefix} {tier.name} Plan
                 </Link>
               </div>
             </div>

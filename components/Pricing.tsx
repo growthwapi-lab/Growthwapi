@@ -17,7 +17,7 @@ export default function Pricing() {
 
   const whatsappPricing = {
     note: "Overage: ₹0.20 per utility/service message, ₹1.20 per marketing message",
-    ctaHref: "/signup",
+    ctaHref: "/dashboard/whatsapp-request",
     ctaTextPrefix: "Get Started with",
     tiers: [
       {

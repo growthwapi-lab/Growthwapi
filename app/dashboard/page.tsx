@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import LogoutButton from "@/components/LogoutButton";
 import WebsiteDevCard, { WebProjectData } from "@/components/WebsiteDevCard";
+import WhatsAppCard, { WhatsAppData } from "@/components/WhatsAppCard";
 import { MessageSquare, PhoneCall, ArrowUpRight, ShieldCheck } from "lucide-react";
 
 export default async function DashboardPage() {
@@ -26,6 +27,8 @@ export default async function DashboardPage() {
 
   // Query web_projects for the logged in user
   let initialProject: WebProjectData | null = null;
+  // Query whatsapp_accounts for the logged in user
+  let initialAccount: WhatsAppData | null = null;
   try {
     const { data, error } = await supabase
       .from("web_projects")
@@ -46,6 +49,28 @@ export default async function DashboardPage() {
     }
   } catch (err) {
     console.error("Error fetching web_projects:", err);
+  }
+
+  // Fetch WhatsApp account
+  try {
+    const { data: waData, error: waError } = await supabase
+      .from("whatsapp_accounts")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (waData && !waError) {
+      initialAccount = {
+        id: waData.id,
+        plan: waData.plan,
+        stage: waData.stage,
+        final_payment_status: waData.final_payment_status,
+        business_name: waData.business_display_name,
+      } as WhatsAppData;
+    }
+  } catch (err) {
+    console.error("Error fetching whatsapp_accounts:", err);
   }
 
   const otherServices = [
@@ -125,41 +150,28 @@ export default async function DashboardPage() {
             {/* Website Dev Card (interactive with 5-stage stepper) */}
             <WebsiteDevCard initialProject={initialProject} userId={user.id} />
 
-            {/* Other Services (WhatsApp & AI Calling) */}
-            {otherServices.map((service) => {
-              const Icon = service.icon;
-              return (
-                <div
-                  key={service.id}
-                  className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="w-12 h-12 rounded-xl bg-blue-50 text-brand-blue flex items-center justify-center mb-4">
-                      <Icon className="w-6 h-6" />
-                    </div>
-                    <h3 className="text-lg font-bold text-brand-darkblue">
-                      {service.title}
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-1 mb-4">
-                      {service.description}
-                    </p>
+            {/* WhatsApp API Card */}
+            <WhatsAppCard initialAccount={initialAccount} userId={user.id} />
 
-                    <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200/60 text-amber-900 text-xs font-medium">
-                      Not subscribed yet
-                    </div>
-                  </div>
-
-                  <div className="mt-6 pt-4 border-t border-slate-100">
-                    <Link
-                      href="/pricing"
-                      className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold text-brand-blue border border-brand-blue hover:bg-brand-blue hover:text-white transition-all text-center block"
-                    >
-                      View Plans
-                    </Link>
-                  </div>
+            {/* AI Calling Card (placeholder) */}
+            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-xl bg-blue-50 text-brand-blue flex items-center justify-center mb-4">
+                  <PhoneCall className="w-6 h-6" />
                 </div>
-              );
-            })}
+                <h3 className="text-lg font-bold text-brand-darkblue">AI Calling Agent</h3>
+                <p className="text-xs text-slate-500 mt-1 mb-4">Autonomous voice AI handling inbound & outbound calls.</p>
+                <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200/60 text-amber-900 text-xs font-medium">Not subscribed yet</div>
+              </div>
+              <div className="mt-6 pt-4 border-t border-slate-100">
+                <Link
+                  href="/pricing"
+                  className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold text-brand-blue border border-brand-blue hover:bg-brand-blue hover:text-white transition-all text-center block"
+                >
+                  View Plans
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </main>

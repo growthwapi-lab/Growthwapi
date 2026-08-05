@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-// import { createClient } from "@/lib/supabase/client"; // Not needed currently
+import { createClient } from "@/lib/supabase/client";
 import { MessageSquare, Check, CheckCircle2, Loader2 } from "lucide-react";
 
 export interface WhatsAppData {

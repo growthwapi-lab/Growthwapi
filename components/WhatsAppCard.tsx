@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
+// import { createClient } from "@/lib/supabase/client"; // Not needed currently
 import { MessageSquare, Check, CheckCircle2, Loader2 } from "lucide-react";
 
 export interface WhatsAppData {
   id?: string;
   plan: string;
   stage: "requirement" | "meta_verification" | "api_setup" | "testing" | "live";
-  final_payment_status?: "pending" | "paid";
+  status?: "setup_pending" | "active" | "live";
   business_name?: string;
   business_number?: string;
 }
@@ -29,8 +29,8 @@ export default function WhatsAppCard({ initialAccount, userId }: { initialAccoun
   const handleSubscribe = async () => {
     const supabase = createClient();
     if (!account) return;
-    await supabase.from("whatsapp_accounts").update({ stage: "live", final_payment_status: "paid" }).eq("id", account.id);
-    setAccount({ ...account, stage: "live", final_payment_status: "paid" });
+    await supabase.from("whatsapp_accounts").update({ stage: "live", status: "active" }).eq("id", account.id);
+    setAccount({ ...account, stage: "live", status: "active" });
   };
 
   if (!account) {
@@ -110,12 +110,12 @@ export default function WhatsAppCard({ initialAccount, userId }: { initialAccoun
       </div>
 
       {/* Action when not paid */}
-      {account.final_payment_status !== "paid" && (
+      {account.status !== "active" && (
         <div className="p-5 rounded-2xl bg-amber-50 border-2 border-brand-orange text-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-brand-orange font-bold text-sm">
               <CheckCircle2 className="w-5 h-5" />
-              <span>Subscription active. Complete setup to go live.</span>
+              <span>Subscription pending. Complete setup to go live.</span>
             </div>
             <p className="text-xs text-slate-600">Click below to simulate activation.</p>
           </div>
@@ -126,7 +126,7 @@ export default function WhatsAppCard({ initialAccount, userId }: { initialAccoun
       )}
 
       {/* Paid confirmation */}
-      {account.final_payment_status === "paid" && (
+      {account.status === "active" && (
         <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>WhatsApp API subscription is active and live.</span>
@@ -135,7 +135,7 @@ export default function WhatsAppCard({ initialAccount, userId }: { initialAccoun
 
       {/* Bottom bar */}
       <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
-        <span>Status: {account.final_payment_status === "paid" ? "Active" : "Pending"}</span>
+        <span>Status: {account.status === "active" ? "Active" : "Pending"}</span>
         <span>Stage: {STAGES[currentStageIndex]?.label}</span>
       </div>
     </div>

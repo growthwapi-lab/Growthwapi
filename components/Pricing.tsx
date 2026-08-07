@@ -268,20 +268,34 @@ export default function Pricing() {
                     </div>
                   ))}
                 </div>
+                {/* Combo description */}
+                {tier.name === "Combo" && (
+                  <p className="mt-4 text-sm text-slate-600">
+                    Includes 2‑day WhatsApp API free trial (AI Calling not included in trial) before your subscription activates.
+                  </p>
+                )}
               </div>
 
-              <div className="mt-8 pt-6 border-t border-slate-100">
-                <Link
-                  href={currentPricing.ctaHref}
-                  className={`w-full py-3.5 px-6 rounded-full font-semibold text-sm transition-all text-center block ${
-                    tier.popular
-                      ? "bg-brand-orange hover:bg-orange-600 text-white shadow-md hover:shadow-lg"
-                      : "bg-slate-100 hover:bg-brand-blue text-brand-darkblue hover:text-white"
-                  }`}
-                >
-                  {currentPricing.ctaTextPrefix} {tier.name} Plan
-                </Link>
-              </div>
+                <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col space-y-3">
+                  {/* Primary CTA */}
+                  <Link
+                    href={tier.name === "Combo" ? "/dashboard/combo-request" : currentPricing.ctaHref}
+                    className={`w-full py-3.5 px-6 rounded-full font-semibold text-sm transition-all text-center block ${
+                      tier.popular
+                        ? "bg-brand-orange hover:bg-orange-600 text-white shadow-md hover:shadow-lg"
+                        : "bg-slate-100 hover:bg-brand-blue text-brand-darkblue hover:text-white"
+                    }`}
+                  >
+                    {tier.name === "Combo" ? "Get Combo" : `${currentPricing.ctaTextPrefix} ${tier.name} Plan`}
+                  </Link>
+                  {/* Secondary CTA */}
+                  <Link
+                    href="/dashboard/whatsapp-request"
+                    className="w-full py-3.5 px-6 rounded-full font-semibold text-sm transition-all text-center block border border-orange-500 text-orange-500 hover:bg-orange-50 bg-white"
+                  >
+                    {tier.name === "Combo" ? "Try WhatsApp Free Trial First" : "Try 2-Day Free Trial First"}
+                  </Link>
+                </div>
             </div>
           ))}
         </div>

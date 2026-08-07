@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { MessageSquare, Check, CheckCircle2, Loader2 } from "lucide-react";
@@ -40,6 +40,11 @@ export default function WhatsAppCard({
   usage?: WhatsAppUsage | null;
 }) {
   const [account, setAccount] = useState<WhatsAppData | null>(initialAccount);
+
+  // Sync prop → state when parent finishes async fetch
+  useEffect(() => {
+    setAccount(initialAccount);
+  }, [initialAccount]);
 
   // Placeholder: In a real app this would trigger a payment flow or subscription upgrade.
   const handleSubscribe = async () => {

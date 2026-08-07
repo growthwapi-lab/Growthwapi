@@ -208,13 +208,27 @@ const handleSubmit = async (e: React.FormEvent) => {
     setSimulatingPayment(true);
     try {
       const supabase = createClient();
-      if (createdSubId && createdSubId !== "temp-sub-id") {
+      if (userId) {
         await supabase
           .from("subscriptions")
           .update({ status: "active" })
-          .eq("id", createdSubId);
+          .eq("user_id", userId)
+          .eq("service", "whatsapp_api");
       }
-      // No status change for whatsapp_accounts (remains setup_pending until further steps)
+      // Activate WhatsApp account (set status active and stage live)
+      const { data: waAcc, error: waErr } = await supabase
+        .from("whatsapp_accounts")
+        .select("id")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (waAcc && !waErr) {
+        await supabase
+          .from("whatsapp_accounts")
+          .update({ status: "active", stage: "live" })
+          .eq("id", waAcc.id);
+      }
       setTimeout(() => {
         router.push("/dashboard");
         router.refresh();

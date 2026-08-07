@@ -81,85 +81,68 @@ export default function DashboardPage() {
   useEffect(() => {
     if (checkingRole || !user) return;
     const fetchData = async () => {
-      // Get active subscriptions for user
-      const { data: subs, error: subErr } = await supabase
-        .from('subscriptions')
-        .select('service')
+      // Fetch WhatsApp Account directly (RLS ensures user sees only their own rows)
+      const { data: waData, error: waErr } = await supabase
+        .from('whatsapp_accounts')
+        .select('*, utility_msgs_used, utility_msgs_included, marketing_msgs_used, marketing_msgs_included')
         .eq('user_id', user.id)
-        .eq('status', 'active');
-      if (subErr) {
-        console.error('Error fetching active subscriptions:', subErr);
-        return;
-      }
-      const active = new Set(subs?.map((s) => s.service) ?? []);
-
-      // Fetch AI Calling Agent usage if active
-      if (active.has('ai_calling')) {
-        const { data, error } = await supabase
-          .from('ai_agents')
-          .select('*, minutes_used, minutes_included')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        if (data && !error) {
-          setAiAgentUsage({
-            minutes_used: data.minutes_used,
-            minutes_included: data.minutes_included,
-          });
-        } else if (error) {
-          console.error('Error fetching ai_agents:', error);
-        }
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (waData && !waErr) {
+        setInitialAccount({
+          id: waData.id,
+          plan: waData.plan,
+          stage: waData.stage,
+          final_payment_status: waData.final_payment_status,
+          business_name: waData.business_display_name,
+          status: waData.status,
+        } as WhatsAppData);
+        setWhatsappUsage({
+          utility_msgs_used: waData.utility_msgs_used,
+          utility_msgs_included: waData.utility_msgs_included,
+          marketing_msgs_used: waData.marketing_msgs_used,
+          marketing_msgs_included: waData.marketing_msgs_included,
+        });
+      } else if (waErr) {
+        console.error('Error fetching whatsapp_accounts:', waErr);
       }
 
-      // Fetch Web Project if active
-      if (active.has('website_dev')) {
-        const { data, error } = await supabase
-          .from('web_projects')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        if (data && !error) {
-          setInitialProject({
-            id: data.id,
-            plan: data.plan,
-            stage: data.stage || 'requirement',
-            final_payment_status: data.final_payment_status || 'pending',
-            business_name: data.brief?.business_name || businessName,
-          } as WebProjectData);
-        } else if (error) {
-          console.error('Error fetching web_projects:', error);
-        }
+      // Fetch Web Project directly
+      const { data: wpData, error: wpErr } = await supabase
+        .from('web_projects')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (wpData && !wpErr) {
+        setInitialProject({
+          id: wpData.id,
+          plan: wpData.plan,
+          stage: wpData.stage || 'requirement',
+          final_payment_status: wpData.final_payment_status || 'pending',
+          business_name: wpData.brief?.business_name || businessName,
+        } as WebProjectData);
+      } else if (wpErr) {
+        console.error('Error fetching web_projects:', wpErr);
       }
 
-      // Fetch WhatsApp Account if active
-      if (active.has('whatsapp_api')) {
-        const { data, error } = await supabase
-          .from('whatsapp_accounts')
-          .select('*, utility_msgs_used, utility_msgs_included, marketing_msgs_used, marketing_msgs_included')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        if (data && !error) {
-          setInitialAccount({
-            id: data.id,
-            plan: data.plan,
-            stage: data.stage,
-            final_payment_status: data.final_payment_status,
-            business_name: data.business_display_name,
-          } as WhatsAppData);
-          setWhatsappUsage({
-            utility_msgs_used: data.utility_msgs_used,
-            utility_msgs_included: data.utility_msgs_included,
-            marketing_msgs_used: data.marketing_msgs_used,
-            marketing_msgs_included: data.marketing_msgs_included,
-          });
-        } else if (error) {
-          console.error('Error fetching whatsapp_accounts:', error);
-        }
+      // Fetch AI Calling Agent directly
+      const { data: aiData, error: aiErr } = await supabase
+        .from('ai_agents')
+        .select('*, minutes_used, minutes_included')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (aiData && !aiErr) {
+        setAiAgentUsage({
+          minutes_used: aiData.minutes_used,
+          minutes_included: aiData.minutes_included,
+        });
+      } else if (aiErr) {
+        console.error('Error fetching ai_agents:', aiErr);
       }
     };
     fetchData();

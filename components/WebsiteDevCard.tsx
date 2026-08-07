@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Globe, Check, Clock, CheckCircle2, ArrowRight, Loader2 } from "lucide-react";
@@ -29,6 +29,11 @@ const STAGES = [
 
 export default function WebsiteDevCard({ initialProject, userId }: WebsiteDevCardProps) {
   const [project, setProject] = useState<WebProjectData | null>(initialProject);
+
+  // Sync prop → state when parent finishes async fetch
+  useEffect(() => {
+    setProject(initialProject);
+  }, [initialProject]);
   const [payingFinal, setPayingFinal] = useState(false);
 
   const getPlanTotalPrice = (planName: string) => {

@@ -63,20 +63,6 @@ const whatsappPlans: WhatsappPlan[] = [
     ],
   },
   {
-    id: "combo",
-    name: "Combo",
-    price: 8000,
-    utilityIncluded: 20000,
-    marketingIncluded: 2000,
-    popular: false,
-    features: [
-      "All WhatsApp API features",
-      "AI Calling Agent included",
-      "Discounted bundle price",
-      "Priority Support",
-    ],
-  },
-  {
     id: "free-trial",
     name: "FREE TRIAL",
     price: 0,

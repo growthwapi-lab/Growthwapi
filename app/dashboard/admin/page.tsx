@@ -124,6 +124,7 @@ export default function AdminDashboardPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dataLoading, setDataLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
+  const [authError, setAuthError] = useState("");
 
   /* ---- sorting ---- */
   const [sortCol, setSortCol] = useState<string>("");
@@ -149,23 +150,61 @@ export default function AdminDashboardPage() {
       const {
         data: { user },
       } = await supabase.auth.getUser();
+
+      console.log("[Admin] Auth user:", user?.id, user?.email);
+
       if (!user) {
         router.push("/login");
         return;
       }
 
-      // Check admin role from profiles table
-      const { data: profile, error: profileError } = await supabase
+      // Try fetching role — first with id column, fallback to user_id
+      let role: string | null = null;
+
+      // Attempt 1: profiles.id = user.id
+      const { data: p1, error: e1 } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
-      if (profileError || !profile || profile.role !== "admin") {
+      console.log("[Admin] profiles.id lookup:", { data: p1, error: e1 });
+
+      if (p1 && p1.role) {
+        role = p1.role;
+      } else {
+        // Attempt 2: profiles.user_id = user.id (alternative schema)
+        const { data: p2, error: e2 } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        console.log("[Admin] profiles.user_id lookup:", { data: p2, error: e2 });
+
+        if (p2 && p2.role) {
+          role = p2.role;
+        }
+      }
+
+      console.log("[Admin] Resolved role:", role);
+
+      if (!role) {
+        setAuthError(
+          "Could not fetch your profile role. Check browser console for details."
+        );
+        setAuthChecking(false);
+        return;
+      }
+
+      if (role !== "admin") {
+        console.log("[Admin] Role is '" + role + "', not admin. Redirecting.");
         router.push("/dashboard");
         return;
       }
 
+      // Role is admin — allow access
+      console.log("[Admin] Access granted for admin user:", user.email);
       setUserId(user.id);
       setAuthChecking(false);
     }
@@ -385,8 +424,24 @@ export default function AdminDashboardPage() {
   /* ================================================================ */
   if (authChecking) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-4">
         <Loader2 className="w-8 h-8 text-blue-700 animate-spin" />
+        {authError && (
+          <div className="max-w-md text-center space-y-3">
+            <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-medium">
+              {authError}
+            </div>
+            <p className="text-xs text-slate-500">
+              Open browser DevTools (F12) → Console tab to see detailed logs.
+            </p>
+            <Link
+              href="/dashboard"
+              className="inline-block px-6 py-2 bg-blue-700 text-white rounded-lg text-sm font-semibold hover:bg-blue-800 transition-colors"
+            >
+              Back to Dashboard
+            </Link>
+          </div>
+        )}
       </div>
     );
   }

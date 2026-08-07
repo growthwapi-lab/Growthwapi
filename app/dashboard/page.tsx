@@ -24,6 +24,8 @@ export default function DashboardPage() {
   const [businessName, setBusinessName] = useState("Your Business");
   const [initialProject, setInitialProject] = useState<WebProjectData | null>(null);
   const [initialAccount, setInitialAccount] = useState<WhatsAppData | null>(null);
+  const [whatsappUsage, setWhatsappUsage] = useState<any>(null);
+  const [aiAgentUsage, setAiAgentUsage] = useState<any>(null);
 
   // ------------------- Role guard -------------------
   useEffect(() => {
@@ -78,6 +80,25 @@ export default function DashboardPage() {
   // ------------------- Data fetching (after role passes) -------------------
   useEffect(() => {
     if (checkingRole || !user) return;
+    // Fetch AI Calling Agent usage
+    supabase
+      .from("ai_agents")
+      .select("*, minutes_used, minutes_included")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (data && !error) {
+          setAiAgentUsage({
+            minutes_used: data.minutes_used,
+            minutes_included: data.minutes_included,
+          });
+        } else if (error) {
+          console.error("Error fetching ai_agents:", error);
+        }
+      });
+      
     // Fetch Web Project
     supabase
       .from("web_projects")
@@ -103,7 +124,7 @@ export default function DashboardPage() {
     // Fetch WhatsApp Account
     supabase
       .from("whatsapp_accounts")
-      .select("*")
+      .select("*, utility_msgs_used, utility_msgs_included, marketing_msgs_used, marketing_msgs_included")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(1)
@@ -117,6 +138,12 @@ export default function DashboardPage() {
             final_payment_status: data.final_payment_status,
             business_name: data.business_display_name,
           } as WhatsAppData);
+          setWhatsappUsage({
+            utility_msgs_used: data.utility_msgs_used,
+            utility_msgs_included: data.utility_msgs_included,
+            marketing_msgs_used: data.marketing_msgs_used,
+            marketing_msgs_included: data.marketing_msgs_included,
+          });
         } else if (error) {
           console.error("Error fetching whatsapp_accounts:", error);
         }
@@ -203,20 +230,30 @@ export default function DashboardPage() {
             {/* Website Dev Card */}
             <WebsiteDevCard initialProject={initialProject} userId={user?.id} />
             {/* WhatsApp API Card */}
-            <WhatsAppCard initialAccount={initialAccount} userId={user?.id} />
-            {/* AI Calling placeholder */}
+            <WhatsAppCard initialAccount={initialAccount} userId={user?.id} usage={whatsappUsage} />
+            {/* AI Calling Agent Usage */}
             <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between">
               <div>
                 <div className="w-12 h-12 rounded-xl bg-blue-50 text-brand-blue flex items-center justify-center mb-4">
                   <PhoneCall className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-bold text-brand-darkblue">AI Calling Agent</h3>
-                <p className="text-xs text-slate-500 mt-1 mb-4">
-                  Autonomous voice AI handling inbound &amp; outbound calls.
-                </p>
-                <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200/60 text-amber-900 text-xs font-medium">
-                  Not subscribed yet
-                </div>
+                {aiAgentUsage ? (
+                  <div className="mt-4">
+                    <div className="text-sm font-medium text-slate-700 mb-1">Minutes Used: {aiAgentUsage.minutes_used} / {aiAgentUsage.minutes_included}</div>
+                    <div className="bg-gray-200 rounded-full h-2">
+                      <div
+                        className={`$${aiAgentUsage.minutes_included && (aiAgentUsage.minutes_used / aiAgentUsage.minutes_included) * 100 > 80 ? "bg-orange-500" : "bg-brand-blue"} h-2 rounded-full`}
+                        style={{ width: `${aiAgentUsage.minutes_included ? Math.round((aiAgentUsage.minutes_used / aiAgentUsage.minutes_included) * 100) : 0}%` }}
+                      ></div>
+                    </div>
+                    <div className="text-xs text-slate-500 mt-1 text-right">
+                      {aiAgentUsage.minutes_included ? Math.round((aiAgentUsage.minutes_used / aiAgentUsage.minutes_included) * 100) : 0}% of monthly quota
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500 mt-1 mb-4">Tracking will start after activation</p>
+                )}
               </div>
               <div className="mt-6 pt-4 border-t border-slate-100">
                 <Link

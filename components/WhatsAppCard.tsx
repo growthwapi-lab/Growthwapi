@@ -22,7 +22,21 @@ const STAGES = [
   { id: "live", label: "Live" },
 ];
 
-export default function WhatsAppCard({ initialAccount, userId }: { initialAccount: WhatsAppData | null; userId: string }) {
+// Updated to accept usage data
+export interface WhatsAppUsage {
+  utility_msgs_used: number;
+  utility_msgs_included: number;
+  marketing_msgs_used: number;
+  marketing_msgs_included: number;
+}
+
+export default function WhatsAppCard({ initialAccount, userId, usage }: { initialAccount: WhatsAppData | null; userId: string; usage?: WhatsAppUsage | null }) {
+  const [account, setAccount] = useState<WhatsAppData | null>(initialAccount);
+  // placeholder unchanged
+  // ... (rest of file unchanged) 
+  // We'll inject usage section later
+}
+
   const [account, setAccount] = useState<WhatsAppData | null>(initialAccount);
 
   // Placeholder: In a real app this would trigger a payment flow or subscription upgrade.

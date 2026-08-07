@@ -1,5 +1,5 @@
-import { serve } from 'https://deno.land/x/sift@0.5.0/mod.ts';
-import { Resend } from '@resend/resend';
+import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
+import { Resend } from "https://esm.sh/@resend/resend";
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
 

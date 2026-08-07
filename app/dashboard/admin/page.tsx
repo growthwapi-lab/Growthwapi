@@ -27,7 +27,7 @@ import {
 interface Profile {
   id: string;
   full_name: string | null;
-  email: string | null;
+
   phone: string | null;
   business_name: string | null;
   role: string | null;
@@ -158,34 +158,18 @@ export default function AdminDashboardPage() {
         return;
       }
 
-      // Try fetching role — first with id column, fallback to user_id
-      let role: string | null = null;
-
-      // Attempt 1: profiles.id = user.id
-      const { data: p1, error: e1 } = await supabase
+      // Role lookup – using profiles.id only
+      const { data: roleData, error: roleError } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", user.id)
         .maybeSingle();
 
-      console.log("[Admin] profiles.id lookup:", { data: p1, error: e1 });
-
-      if (p1 && p1.role) {
-        role = p1.role;
-      } else {
-        // Attempt 2: profiles.user_id = user.id (alternative schema)
-        const { data: p2, error: e2 } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        console.log("[Admin] profiles.user_id lookup:", { data: p2, error: e2 });
-
-        if (p2 && p2.role) {
-          role = p2.role;
-        }
+      console.log("[Admin] profiles.id lookup:", { data: roleData, error: roleError });
+      if (roleError) {
+        console.error("Error fetching role:", roleError);
       }
+      const role = roleData?.role || null;
 
       console.log("[Admin] Resolved role:", role);
 
@@ -224,7 +208,7 @@ export default function AdminDashboardPage() {
       // Profiles
       const { data: pData, error: pErr } = await supabase
         .from("profiles")
-        .select("id, full_name, email, phone, business_name, role, created_at")
+        .select("id, full_name, phone, business_name, role, created_at")
         .order("created_at", { ascending: false });
       if (pErr) throw pErr;
       setProfiles((pData as Profile[]) || []);
@@ -655,9 +639,6 @@ export default function AdminDashboardPage() {
                     >
                       Client Name {sortIcon("name")}
                     </th>
-                    <th className="px-4 py-3 font-semibold text-slate-600">
-                      Email
-                    </th>
                     <th className="px-4 py-3 font-semibold text-slate-600 hidden md:table-cell">
                       Phone
                     </th>
@@ -685,7 +666,7 @@ export default function AdminDashboardPage() {
                   {filteredProfiles.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={8}
+                        colSpan={7}
                         className="px-4 py-8 text-center text-slate-400"
                       >
                         {dataLoading ? "Loading…" : "No clients found."}
@@ -709,9 +690,6 @@ export default function AdminDashboardPage() {
                         >
                           <td className="px-4 py-3 font-medium text-blue-800">
                             {p.full_name || "—"}
-                          </td>
-                          <td className="px-4 py-3 text-slate-600">
-                            {p.email || "—"}
                           </td>
                           <td className="px-4 py-3 text-slate-600 hidden md:table-cell">
                             {p.phone || "—"}
@@ -757,7 +735,7 @@ export default function AdminDashboardPage() {
                                   (w) => w.user_id === p.id
                                 );
                                 setDetailModal({
-                                  title: p.full_name || p.email || "Client",
+                                  title: p.full_name || "Client",
                                   profile: p,
                                   subscriptions: clientSubs,
                                   whatsapp: clientWa,

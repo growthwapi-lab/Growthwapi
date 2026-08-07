@@ -1,96 +1,154 @@
+"use client"
+
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import LogoutButton from "@/components/LogoutButton";
 import WebsiteDevCard, { WebProjectData } from "@/components/WebsiteDevCard";
 import WhatsAppCard, { WhatsAppData } from "@/components/WhatsAppCard";
-import { MessageSquare, PhoneCall, ArrowUpRight, ShieldCheck } from "lucide-react";
+import { MessageSquare, PhoneCall, ArrowUpRight, ShieldCheck, Loader2 } from "lucide-react";
 
-export default async function DashboardPage() {
+export default function DashboardPage() {
+  const router = useRouter();
   const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect("/login");
-  }
+  // ---- UI state ----
+  const [checkingRole, setCheckingRole] = useState(true);
+  const [roleError, setRoleError] = useState("");
 
-  const fullName =
-    user.user_metadata?.full_name ||
-    user.user_metadata?.name ||
-    user.email?.split("@")[0] ||
-    "User";
+  // ---- Data state ----
+  const [user, setUser] = useState<any>(null);
+  const [fullName, setFullName] = useState("User");
+  const [businessName, setBusinessName] = useState("Your Business");
+  const [initialProject, setInitialProject] = useState<WebProjectData | null>(null);
+  const [initialAccount, setInitialAccount] = useState<WhatsAppData | null>(null);
 
-  const businessName = user.user_metadata?.business_name || "Your Business";
+  // ------------------- Role guard -------------------
+  useEffect(() => {
+    async function verifyRole() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+      setUser(user);
 
-  // Query web_projects for the logged in user
-  let initialProject: WebProjectData | null = null;
-  // Query whatsapp_accounts for the logged in user
-  let initialAccount: WhatsAppData | null = null;
-  try {
-    const { data, error } = await supabase
+      // Resolve name & business for display
+      const name =
+        user.user_metadata?.full_name ||
+        user.user_metadata?.name ||
+        user.email?.split("@")[0] ||
+        "User";
+      const business = user.user_metadata?.business_name || "Your Business";
+      setFullName(name);
+      setBusinessName(business);
+
+      // Role lookup – using profiles.id only
+      const { data: roleData, error: roleError } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (roleError) {
+        console.error("Error fetching role:", roleError);
+      }
+      const role = roleData?.role || null;
+      console.log("[Dashboard] Resolved role:", role);
+
+      if (!role) {
+        setRoleError("Could not fetch role – check console for details.");
+        setCheckingRole(false);
+        return;
+      }
+
+      if (role === "admin") {
+        console.log("[Dashboard] User role: admin – redirecting");
+        router.push("/dashboard/admin");
+        return;
+      }
+
+      console.log("[Dashboard] User role: client – showing dashboard");
+      setCheckingRole(false);
+    }
+    verifyRole();
+  }, [router, supabase]);
+
+  // ------------------- Data fetching (after role passes) -------------------
+  useEffect(() => {
+    if (checkingRole || !user) return;
+    // Fetch Web Project
+    supabase
       .from("web_projects")
       .select("*")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(1)
-      .maybeSingle();
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (data && !error) {
+          setInitialProject({
+            id: data.id,
+            plan: data.plan,
+            stage: data.stage || "requirement",
+            final_payment_status: data.final_payment_status || "pending",
+            business_name: data.brief?.business_name || businessName,
+          } as WebProjectData);
+        } else if (error) {
+          console.error("Error fetching web_projects:", error);
+        }
+      });
 
-    if (data && !error) {
-      initialProject = {
-        id: data.id,
-        plan: data.plan,
-        stage: data.stage || "requirement",
-        final_payment_status: data.final_payment_status || "pending",
-        business_name: data.brief?.business_name || businessName,
-      };
-    }
-  } catch (err) {
-    console.error("Error fetching web_projects:", err);
-  }
-
-  // Fetch WhatsApp account
-  try {
-    const { data: waData, error: waError } = await supabase
+    // Fetch WhatsApp Account
+    supabase
       .from("whatsapp_accounts")
       .select("*")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(1)
-      .maybeSingle();
-    if (waData && !waError) {
-      initialAccount = {
-        id: waData.id,
-        plan: waData.plan,
-        stage: waData.stage,
-        final_payment_status: waData.final_payment_status,
-        business_name: waData.business_display_name,
-      } as WhatsAppData;
-    }
-  } catch (err) {
-    console.error("Error fetching whatsapp_accounts:", err);
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (data && !error) {
+          setInitialAccount({
+            id: data.id,
+            plan: data.plan,
+            stage: data.stage,
+            final_payment_status: data.final_payment_status,
+            business_name: data.business_display_name,
+          } as WhatsAppData);
+        } else if (error) {
+          console.error("Error fetching whatsapp_accounts:", error);
+        }
+      });
+  }, [checkingRole, user, businessName, supabase]);
+
+  // ------------------- Loading / Error UI -------------------
+  if (checkingRole) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-blue-700 animate-spin" />
+      </div>
+    );
   }
 
-  const otherServices = [
-    {
-      id: "whatsapp",
-      title: "WhatsApp API",
-      icon: MessageSquare,
-      description: "Utility, service & bulk marketing messaging platform.",
-    },
-    {
-      id: "ai-calling",
-      title: "AI Calling Agent",
-      icon: PhoneCall,
-      description: "Autonomous voice AI handling inbound & outbound calls.",
-    },
-  ];
+  if (roleError) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-4">
+        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm">
+          {roleError}
+        </div>
+        <Link href="/login" className="text-blue-600 underline">
+          Sign in again
+        </Link>
+      </div>
+    );
+  }
 
+  // ------------------- Main dashboard UI (client view) -------------------
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Dashboard Header */}
+      {/* Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <Link href="/">
@@ -103,7 +161,6 @@ export default async function DashboardPage() {
               priority
             />
           </Link>
-
           <div className="flex items-center gap-4">
             <span className="hidden sm:inline-block text-xs font-semibold px-3 py-1 bg-blue-50 text-brand-blue rounded-full border border-blue-100">
               {businessName}
@@ -113,7 +170,6 @@ export default async function DashboardPage() {
         </div>
       </header>
 
-      {/* Main Dashboard Content */}
       <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* Welcome banner */}
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -122,7 +178,7 @@ export default async function DashboardPage() {
               Welcome, {fullName}
             </h1>
             <p className="text-slate-500 text-sm mt-1">
-              Account Overview & Active Subscriptions ({user.email})
+              Account Overview &amp; Active Subscriptions ({user?.email})
             </p>
           </div>
           <div className="flex items-center gap-2 text-xs font-medium text-slate-500 bg-slate-100 px-4 py-2 rounded-full">
@@ -131,12 +187,10 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* Services Status Section */}
+        {/* Services Section */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-brand-darkblue">
-              Your Growth Services
-            </h2>
+            <h2 className="text-xl font-bold text-brand-darkblue">Your Growth Services</h2>
             <Link
               href="/pricing"
               className="text-xs font-semibold text-brand-orange hover:underline flex items-center gap-1"
@@ -145,23 +199,24 @@ export default async function DashboardPage() {
               <ArrowUpRight className="w-3.5 h-3.5" />
             </Link>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Website Dev Card (interactive with 5-stage stepper) */}
-            <WebsiteDevCard initialProject={initialProject} userId={user.id} />
-
+            {/* Website Dev Card */}
+            <WebsiteDevCard initialProject={initialProject} userId={user?.id} />
             {/* WhatsApp API Card */}
-            <WhatsAppCard initialAccount={initialAccount} userId={user.id} />
-
-            {/* AI Calling Card (placeholder) */}
+            <WhatsAppCard initialAccount={initialAccount} userId={user?.id} />
+            {/* AI Calling placeholder */}
             <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between">
               <div>
                 <div className="w-12 h-12 rounded-xl bg-blue-50 text-brand-blue flex items-center justify-center mb-4">
                   <PhoneCall className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-bold text-brand-darkblue">AI Calling Agent</h3>
-                <p className="text-xs text-slate-500 mt-1 mb-4">Autonomous voice AI handling inbound & outbound calls.</p>
-                <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200/60 text-amber-900 text-xs font-medium">Not subscribed yet</div>
+                <p className="text-xs text-slate-500 mt-1 mb-4">
+                  Autonomous voice AI handling inbound &amp; outbound calls.
+                </p>
+                <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200/60 text-amber-900 text-xs font-medium">
+                  Not subscribed yet
+                </div>
               </div>
               <div className="mt-6 pt-4 border-t border-slate-100">
                 <Link
@@ -176,7 +231,7 @@ export default async function DashboardPage() {
         </div>
       </main>
 
-      {/* Simple Footer */}
+      {/* Footer */}
       <footer className="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-400">
         <p>© 2026 GrowthWapi. All rights reserved.</p>
       </footer>

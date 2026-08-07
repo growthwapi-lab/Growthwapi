@@ -30,20 +30,25 @@ export interface WhatsAppUsage {
   marketing_msgs_included: number;
 }
 
-export default function WhatsAppCard({ initialAccount, userId, usage }: { initialAccount: WhatsAppData | null; userId: string; usage?: WhatsAppUsage | null }) {
-  const [account, setAccount] = useState<WhatsAppData | null>(initialAccount);
-  // placeholder unchanged
-  // ... (rest of file unchanged) 
-  // We'll inject usage section later
-}
-
+export default function WhatsAppCard({
+  initialAccount,
+  userId,
+  usage,
+}: {
+  initialAccount: WhatsAppData | null;
+  userId: string;
+  usage?: WhatsAppUsage | null;
+}) {
   const [account, setAccount] = useState<WhatsAppData | null>(initialAccount);
 
   // Placeholder: In a real app this would trigger a payment flow or subscription upgrade.
   const handleSubscribe = async () => {
     const supabase = createClient();
     if (!account) return;
-    await supabase.from("whatsapp_accounts").update({ stage: "live", status: "active" }).eq("id", account.id);
+    await supabase
+      .from("whatsapp_accounts")
+      .update({ stage: "live", status: "active" })
+      .eq("id", account.id);
     setAccount({ ...account, stage: "live", status: "active" });
   };
 
@@ -55,11 +60,18 @@ export default function WhatsAppCard({ initialAccount, userId, usage }: { initia
             <MessageSquare className="w-6 h-6" />
           </div>
           <h3 className="text-lg font-bold text-brand-darkblue">WhatsApp API</h3>
-          <p className="text-xs text-slate-500 mt-1 mb-4">Automated messaging & bulk marketing platform.</p>
-          <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200/60 text-amber-900 text-xs font-medium">Not subscribed yet</div>
+          <p className="text-xs text-slate-500 mt-1 mb-4">
+            Automated messaging & bulk marketing platform.
+          </p>
+          <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200/60 text-amber-900 text-xs font-medium">
+            Not subscribed yet
+          </div>
         </div>
         <div className="mt-6 pt-4 border-t border-slate-100">
-          <Link href="/dashboard/whatsapp-request" className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold text-brand-blue border border-brand-blue hover:bg-brand-blue hover:text-white transition-all text-center block">
+          <Link
+            href="/dashboard/whatsapp-request"
+            className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold text-brand-blue border border-brand-blue hover:bg-brand-blue hover:text-white transition-all text-center block"
+          >
             Request WhatsApp API
           </Link>
         </div>
@@ -133,7 +145,10 @@ export default function WhatsAppCard({ initialAccount, userId, usage }: { initia
             </div>
             <p className="text-xs text-slate-600">Click below to simulate activation.</p>
           </div>
-          <button onClick={handleSubscribe} className="w-full sm:w-auto px-6 py-2 bg-brand-orange hover:bg-orange-600 text-white font-semibold text-xs rounded-full shadow-md transition-all flex items-center justify-center gap-2">
+          <button
+            onClick={handleSubscribe}
+            className="w-full sm:w-auto px-6 py-2 bg-brand-orange hover:bg-orange-600 text-white font-semibold text-xs rounded-full shadow-md transition-all flex items-center justify-center gap-2"
+          >
             Activate Subscription
           </button>
         </div>

@@ -58,7 +58,30 @@ export default function Pricing() {
           "24/7 SLA Support",
         ],
       },
-    ],
+      {
+        name: "Combo",
+        price: "₹8,000",
+        period: "/month",
+        popular: false,
+        features: [
+          "All WhatsApp API features",
+          "AI Calling Agent included",
+          "Discounted bundle price",
+          "Priority Support",
+        ],
+      },
+      {
+        name: "FREE TRIAL",
+        price: "₹0",
+        period: "",
+        popular: false,
+        features: [
+          "2‑Day Free Trial – up to 50 messages",
+          "No payment required",
+          "Setup pending until activation",
+        ],
+      },
+    ]
   };
 
   const aiCallingPricing = {

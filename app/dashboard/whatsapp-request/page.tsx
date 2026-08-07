@@ -62,6 +62,33 @@ const whatsappPlans: WhatsappPlan[] = [
       "24/7 SLA Support",
     ],
   },
+  {
+    id: "combo",
+    name: "Combo",
+    price: 8000,
+    utilityIncluded: 20000,
+    marketingIncluded: 2000,
+    popular: false,
+    features: [
+      "All WhatsApp API features",
+      "AI Calling Agent included",
+      "Discounted bundle price",
+      "Priority Support",
+    ],
+  },
+  {
+    id: "free-trial",
+    name: "FREE TRIAL",
+    price: 0,
+    utilityIncluded: 0,
+    marketingIncluded: 0,
+    popular: false,
+    features: [
+      "2‑Day Free Trial – up to 50 messages",
+      "No payment required",
+      "Setup pending until activation",
+    ],
+  },
 ];
 
 export default function WhatsappRequestPage() {
@@ -108,73 +135,88 @@ export default function WhatsappRequestPage() {
     );
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!userId) return;
-    setLoading(true);
-    setErrorMsg("");
-    try {
-      const supabase = createClient();
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!userId) return;
+  setLoading(true);
+  setErrorMsg("");
+  try {
+    const supabase = createClient();
 
-      const requirements = {
-        business_category: businessCategory,
-        message_types: messageTypes,
-        meta_business_id: hasMeta === "yes" ? metaId : null,
-        additional_requirements: additionalReq,
-      };
+    const requirements = {
+      business_category: businessCategory,
+      message_types: messageTypes,
+      meta_business_id: hasMeta === "yes" ? metaId : null,
+      additional_requirements: additionalReq,
+    };
 
-      const whatsappPayload = {
-        user_id: userId,
-        business_display_name: businessName,
-        stage: "requirement",
-        requirements: requirements,
-        status: "setup_pending",
-        utility_msgs_included: selectedPlan.utilityIncluded,
-        marketing_msgs_included: selectedPlan.marketingIncluded,
-      };
+    // Base payload for WhatsApp account
+    const whatsappPayload: any = {
+      user_id: userId,
+      business_display_name: businessName,
+      stage: "requirement",
+      requirements: requirements,
+      status: "setup_pending",
+      utility_msgs_included: selectedPlan.utilityIncluded,
+      marketing_msgs_included: selectedPlan.marketingIncluded,
+    };
 
-      console.log("WhatsApp account payload:", whatsappPayload);
-
-      const { data: waData, error: waError } = await supabase
-        .from("whatsapp_accounts")
-        .insert(whatsappPayload)
-        .select()
-        .single();
-
-      if (waError) {
-        console.error("WhatsApp insert error:", waError);
-        throw new Error(waError.message);
-      }
-
-      const subscriptionPayload = {
-        user_id: userId,
-        service: "whatsapp_api",
-        plan: selectedPlan.id,
-        status: "pending_payment",
-        amount: selectedPlan.price,
-      };
-
-      console.log("Subscription payload:", subscriptionPayload);
-
-      const { data: subData, error: subError } = await supabase
-        .from("subscriptions")
-        .insert(subscriptionPayload)
-        .select()
-        .single();
-
-      if (subError) {
-        console.error("Subscription insert error:", subError);
-        throw new Error(subError.message);
-      }
-
-      setCreatedSubId(subData?.id || "temp-sub-id");
-      setLoading(false);
-      setStep("simulate_payment");
-    } catch (err: any) {
-      setErrorMsg(err.message || "Failed to submit request.");
-      setLoading(false);
+    // If free trial selected, add trial fields and adjust caps
+    if (selectedPlan.id === "free-trial") {
+      whatsappPayload.trial_status = "active";
+      whatsappPayload.trial_started_at = new Date().toISOString();
+      whatsappPayload.trial_messages_used = 0;
+      whatsappPayload.utility_msgs_included = 50; // trial cap
+      whatsappPayload.marketing_msgs_included = 0;
     }
-  };
+
+    const { data: waData, error: waError } = await supabase
+      .from("whatsapp_accounts")
+      .insert(whatsappPayload)
+      .select()
+      .single();
+
+    if (waError) {
+      console.error("WhatsApp insert error:", waError);
+      throw new Error(waError.message);
+    }
+
+    // If trial, skip subscription creation and finish
+    if (selectedPlan.id === "free-trial") {
+      setLoading(false);
+      router.push("/dashboard");
+      router.refresh();
+      return;
+    }
+
+    // Paid flow: create subscription record
+    const subscriptionPayload = {
+      user_id: userId,
+      service: "whatsapp_api",
+      plan: selectedPlan.id,
+      status: "pending_payment",
+      amount: selectedPlan.price,
+    };
+
+    const { data: subData, error: subError } = await supabase
+      .from("subscriptions")
+      .insert(subscriptionPayload)
+      .select()
+      .single();
+
+    if (subError) {
+      console.error("Subscription insert error:", subError);
+      throw new Error(subError.message);
+    }
+
+    setCreatedSubId(subData?.id || "temp-sub-id");
+    setLoading(false);
+    setStep("simulate_payment");
+  } catch (err: any) {
+    setErrorMsg(err.message || "Failed to submit request.");
+    setLoading(false);
+  }
+};
 
   const handleSimulatePaymentReceived = async () => {
     setSimulatingPayment(true);
@@ -463,7 +505,9 @@ export default function WhatsappRequestPage() {
                         Submitting...
                       </>
                     ) : (
-                      `Proceed to Pay Advance (₹${selectedPlan.price.toLocaleString("en-IN")})`
+                      selectedPlan.id === "free-trial"
+                        ? "Start Free Trial"
+                        : `Proceed to Pay Advance (₹${selectedPlan.price.toLocaleString("en-IN")})`
                     )}
                   </button>
                 </div>

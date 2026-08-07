@@ -278,12 +278,11 @@ export default function AdminDashboardPage() {
 
   const profileName = (uid: string) => {
     const p = profiles.find((pr) => pr.id === uid);
-    return p?.full_name || p?.email || uid.slice(0, 8);
+    return p?.full_name || uid.slice(0, 8);
   };
 
   const profileEmail = (uid: string) => {
-    const p = profiles.find((pr) => pr.id === uid);
-    return p?.email || "—";
+    return "—";
   };
 
   const clientServices = (uid: string) => {

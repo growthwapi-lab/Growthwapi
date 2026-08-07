@@ -27,7 +27,7 @@ import {
 interface Profile {
   id: string;
   full_name: string | null;
-
+  email?: string | null;
   phone: string | null;
   business_name: string | null;
   role: string | null;
@@ -438,10 +438,10 @@ export default function AdminDashboardPage() {
     .filter((p) => p.role !== "admin")
     .filter(
       (p) =>
-        !q ||
-        (p.full_name || "").toLowerCase().includes(q) ||
-        (p.email || "").toLowerCase().includes(q) ||
-        (p.business_name || "").toLowerCase().includes(q)
+         !q ||
+         (p.full_name || "").toLowerCase().includes(q) ||
+          (p.email || "").toLowerCase().includes(q) ||
+          (p.business_name || "").toLowerCase().includes(q)
     );
 
   const filteredSubs = subscriptions.filter(
@@ -639,6 +639,9 @@ export default function AdminDashboardPage() {
                       Client Name {sortIcon("name")}
                     </th>
                     <th className="px-4 py-3 font-semibold text-slate-600 hidden md:table-cell">
+                      Email
+                    </th>
+                    <th className="px-4 py-3 font-semibold text-slate-600 hidden md:table-cell">
                       Phone
                     </th>
                     <th className="px-4 py-3 font-semibold text-slate-600 hidden lg:table-cell">
@@ -665,7 +668,7 @@ export default function AdminDashboardPage() {
                   {filteredProfiles.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={7}
+                        colSpan={8}
                         className="px-4 py-8 text-center text-slate-400"
                       >
                         {dataLoading ? "Loading…" : "No clients found."}
@@ -689,6 +692,9 @@ export default function AdminDashboardPage() {
                         >
                           <td className="px-4 py-3 font-medium text-blue-800">
                             {p.full_name || "—"}
+                          </td>
+                          <td className="px-4 py-3 text-slate-600 hidden md:table-cell">
+                            {p.email || "—"}
                           </td>
                           <td className="px-4 py-3 text-slate-600 hidden md:table-cell">
                             {p.phone || "—"}
@@ -951,18 +957,6 @@ export default function AdminDashboardPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-slate-200 bg-slate-50 text-left">
-                      <th className="px-4 py-3 font-semibold text-slate-600">
-                        Client
-                      </th>
-                      <th className="px-4 py-3 font-semibold text-slate-600">
-                        Plan
-                      </th>
-                      <th className="px-4 py-3 font-semibold text-slate-600">
-                        Stage
-                      </th>
-                      <th className="px-4 py-3 font-semibold text-slate-600 hidden md:table-cell">
-                        Deadline
-                      </th>
                       <th className="px-4 py-3 font-semibold text-slate-600 hidden md:table-cell">
                         Created
                       </th>

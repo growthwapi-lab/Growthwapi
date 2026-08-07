@@ -262,7 +262,7 @@ export default function ComboRequestPage() {
   };
 
   /* ---- Simulate payment ---- */
-  const handleSimulatePayment = async () => {
+  const handleSimulatePaymentReceived = async () => {
     setSimulatingPayment(true);
     try {
       const supabase = createClient();
@@ -831,7 +831,7 @@ export default function ComboRequestPage() {
                 WhatsApp trial is already active. AI Calling charges begin now.
               </p>
               <button
-                onClick={handleSimulatePayment}
+                onClick={handleSimulatePaymentReceived}
                 disabled={simulatingPayment}
                 className="w-full py-4 bg-brand-orange hover:bg-orange-600 text-white rounded-full font-semibold text-sm transition-all shadow-md flex items-center justify-center gap-2"
               >

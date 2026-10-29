@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/logo.png.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Growthwapi - WhatsApp Business Automation</title>
+  </head>
+  <body class="bg-brand-light text-brand-dark min-h-screen">
+    <div id="root"></div>
+    <!-- Facebook SDK for Meta WhatsApp Embedded Signup -->
+    <script>
+      window.fbAsyncInit = function() {
+        FB.init({
+          appId      : '1628000222058652',
+          cookie     : true,
+          xfbml      : true,
+          version    : 'v18.0'
+        });
+      };
+      (function(d, s, id){
+         var js, fjs = d.getElementsByTagName(s)[0];
+         if (d.getElementById(id)) {return;}
+         js = d.createElement(s); js.id = id;
+         js.src = "https://connect.facebook.net/en_US/sdk.js";
+         js.async = true;
+         js.defer = true;
+         fjs.parentNode.insertBefore(js, fjs);
+       }(document, 'script', 'facebook-jssdk'));
+    </script>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

@@ -15,7 +15,8 @@ import {
   Download,
   Trash2,
   CheckSquare,
-  Square
+  Square,
+  ArrowLeft
 } from 'lucide-react'
 import api from '../../lib/api'
 import toast from 'react-hot-toast'
@@ -138,7 +139,10 @@ export default function Inbox() {
           setActiveConv(updatedActive)
         }
       } else if (convList.length > 0 && !isSilent) {
-        setActiveConv(convList[0])
+        // Auto-select on desktop screens (>= 768px), keep null on mobile so user sees chat list like WhatsApp
+        if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+          setActiveConv(convList[0])
+        }
       }
     } catch (err) {
       console.error('Error fetching messages:', err)
@@ -501,22 +505,24 @@ export default function Inbox() {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex h-[calc(100vh-8rem)]">
-      {/* Conversations List */}
-      <div className="w-1/3 border-r border-gray-200 flex flex-col bg-gray-50/50">
-        <div className="p-4 border-b border-gray-200 bg-white flex justify-between items-center">
-          <h2 className="font-bold text-brand-dark">Inbox</h2>
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex h-[calc(100vh-7.5rem)] sm:h-[calc(100vh-8rem)]">
+      {/* Conversations List (On mobile: full-width when activeConv is null, hidden when chat is open; On desktop: always visible as sidebar) */}
+      <div className={`w-full md:w-80 lg:w-96 border-r border-gray-200 flex-col bg-gray-50/50 shrink-0 ${
+        activeConv ? 'hidden md:flex' : 'flex'
+      }`}>
+        <div className="p-3.5 sm:p-4 border-b border-gray-200 bg-white flex justify-between items-center">
+          <h2 className="font-bold text-brand-dark text-base sm:text-lg">Inbox</h2>
           <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-semibold">
             {conversations.length} Chats
           </span>
         </div>
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
           {conversations.length > 0 ? (
             conversations.map((conv) => (
               <div
                 key={conv.id}
                 onClick={() => setActiveConv(conv)}
-                className={`p-4 border-b border-gray-100 cursor-pointer transition-colors relative ${
+                className={`p-3.5 sm:p-4 cursor-pointer transition-colors relative ${
                   activeConv?.id === conv.id ? 'bg-blue-50/70 border-l-4 border-l-brand-blue' : 'hover:bg-gray-100/70'
                 }`}
               >
@@ -545,14 +551,16 @@ export default function Inbox() {
         </div>
       </div>
 
-      {/* Chat Area */}
-      <div className="flex-1 flex flex-col bg-[#efeae2]/40 relative">
+      {/* Chat Area (On mobile: full-width when activeConv is open, hidden when null; On desktop: always visible) */}
+      <div className={`flex-1 flex-col bg-[#efeae2]/40 relative ${
+        activeConv ? 'flex' : 'hidden md:flex'
+      }`}>
         {activeConv ? (
           <>
             {/* Active Chat Header */}
             {isSelectMode ? (
-              <div className="p-3.5 border-b border-blue-200 flex items-center justify-between bg-blue-50/90 shadow-xs z-10 animate-in fade-in duration-150">
-                <div className="flex items-center gap-3">
+              <div className="p-2.5 sm:p-3.5 border-b border-blue-200 flex items-center justify-between bg-blue-50/95 shadow-xs z-10 animate-in fade-in duration-150 gap-2">
+                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                   <button
                     onClick={() => {
                       setIsSelectMode(false)
@@ -563,66 +571,76 @@ export default function Inbox() {
                   >
                     <X className="w-5 h-5" />
                   </button>
-                  <span className="font-bold text-sm text-gray-800">
+                  <span className="font-bold text-xs sm:text-sm text-gray-800 whitespace-nowrap">
                     {selectedMsgIds.size} Selected
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                   <button
                     onClick={handleSelectAll}
-                    className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-2xs"
+                    className="px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-2xs whitespace-nowrap"
                   >
                     {selectedMsgIds.size === activeConv.messages.length ? 'Deselect All' : 'Select All'}
                   </button>
                   <button
                     onClick={handleBatchDelete}
                     disabled={selectedMsgIds.size === 0 || deletingBatch}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white font-semibold text-xs rounded-lg hover:bg-red-700 transition-colors shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 bg-red-600 text-white font-semibold text-xs rounded-lg hover:bg-red-700 transition-colors shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
                   >
-                    <Trash2 className="w-4 h-4" />
-                    {deletingBatch ? 'Deleting...' : `Delete (${selectedMsgIds.size})`}
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>{deletingBatch ? 'Deleting...' : `Delete (${selectedMsgIds.size})`}</span>
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="p-3.5 border-b border-gray-200 flex items-center justify-between bg-white shadow-xs z-10">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-brand-blue rounded-full flex items-center justify-center text-white font-bold">
+              <div className="p-2.5 sm:p-3.5 border-b border-gray-200 flex items-center justify-between bg-white shadow-xs z-10 gap-2">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  {/* WhatsApp-style Back button on mobile */}
+                  <button
+                    onClick={() => setActiveConv(null)}
+                    className="md:hidden p-1.5 -ml-1 text-gray-600 hover:text-brand-dark hover:bg-gray-100 rounded-lg transition-colors shrink-0"
+                    title="Back to Chats"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
+
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 bg-brand-blue rounded-full flex items-center justify-center text-white font-bold shrink-0">
                     <User size={18} />
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-brand-dark text-sm">{activeConv.name}</h3>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <h3 className="font-bold text-brand-dark text-sm truncate">{activeConv.name}</h3>
                       {activeConv.needsHuman && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 border border-red-200">
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 border border-red-200 shrink-0">
                           <AlertCircle className="w-3 h-3" />
-                          Needs Human
+                          <span className="hidden sm:inline">Needs Human</span>
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-gray-400 font-mono">{activeConv.phone}</p>
+                    <p className="text-xs text-gray-400 font-mono truncate">{activeConv.phone}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                   <button
                     onClick={() => setIsSelectMode(true)}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-gray-600 hover:text-brand-blue hover:bg-blue-50 border border-gray-200 rounded-lg transition-colors"
+                    className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-gray-600 hover:text-brand-blue hover:bg-blue-50 border border-gray-200 rounded-lg transition-colors"
                     title="Select messages to delete"
                   >
-                    <CheckSquare className="w-4 h-4" />
-                    Select
+                    <CheckSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">Select</span>
                   </button>
 
                   {activeConv.needsHuman && (
                     <button
                       onClick={handleResolveHumanHandOff}
                       disabled={resolving}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white font-semibold text-xs rounded-lg hover:bg-emerald-700 transition-colors shadow-xs disabled:opacity-50"
+                      className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 text-white font-semibold text-xs rounded-lg hover:bg-emerald-700 transition-colors shadow-xs disabled:opacity-50"
+                      title="Mark as Resolved"
                     >
-                      <CheckCircle className="w-4 h-4" />
-                      Mark as Resolved
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <span className="hidden sm:inline">Resolve</span>
                     </button>
                   )}
                   <button
@@ -637,7 +655,7 @@ export default function Inbox() {
             )}
 
             {/* Chat Thread */}
-            <div className="flex-1 p-6 overflow-y-auto flex flex-col gap-3">
+            <div className="flex-1 p-3 sm:p-6 overflow-y-auto flex flex-col gap-3">
               {activeConv.messages
                 .slice()
                 .reverse()
@@ -653,7 +671,7 @@ export default function Inbox() {
                           toggleSelectMessage(m.id)
                         }
                       }}
-                      className={`group max-w-[75%] p-3 rounded-2xl text-sm relative shadow-xs transition-all ${
+                      className={`group max-w-[85%] sm:max-w-[75%] p-3 rounded-2xl text-sm relative shadow-xs transition-all ${
                         isSelectMode ? 'cursor-pointer select-none' : ''
                       } ${
                         isSelected

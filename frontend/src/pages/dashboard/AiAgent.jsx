@@ -312,35 +312,36 @@ export default function AiAgent() {
         </div>
 
         {agent && (
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <button
               onClick={handleToggleStatus}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-xs ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-xs ${
                 agent.status === 'active'
                   ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
                   : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
               }`}
             >
-              <Power className="w-4 h-4" />
-              {agent.status === 'active' ? 'Active (Replying 24/7)' : 'Paused'}
+              <Power className="w-4 h-4 shrink-0" />
+              <span>{agent.status === 'active' ? 'Active (24/7)' : 'Paused'}</span>
             </button>
 
             <button
               onClick={() => setTestChatOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-orange to-orange-600 text-white text-sm font-semibold rounded-xl hover:opacity-95 shadow-xs transition-all"
+              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-brand-orange to-orange-600 text-white text-xs sm:text-sm font-semibold rounded-xl hover:opacity-95 shadow-xs transition-all"
             >
-              <MessageSquare className="w-4 h-4" />
-              Test Chat
+              <MessageSquare className="w-4 h-4 shrink-0" />
+              <span>Test Chat</span>
             </button>
 
             {agent.website_url && !agent.website_url.includes('Custom') && (
               <button
                 onClick={handleRetrain}
                 disabled={retraining || agent.status === 'crawling'}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50 shadow-xs transition-all disabled:opacity-50"
+                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-300 text-gray-700 text-xs sm:text-sm font-semibold rounded-xl hover:bg-gray-50 shadow-xs transition-all disabled:opacity-50"
               >
-                <RefreshCw className={`w-4 h-4 ${retraining || agent.status === 'crawling' ? 'animate-spin' : ''}`} />
-                {agent.status === 'crawling' ? 'Learning Website...' : 'Re-Crawl Website'}
+                <RefreshCw className={`w-4 h-4 shrink-0 ${retraining || agent.status === 'crawling' ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">{agent.status === 'crawling' ? 'Learning Website...' : 'Re-Crawl Website'}</span>
+                <span className="sm:hidden">Re-Crawl</span>
               </button>
             )}
 
@@ -349,7 +350,7 @@ export default function AiAgent() {
               className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-200"
               title="Delete AI Agent"
             >
-              <Trash2 className="w-5 h-5" />
+              <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
         )}
@@ -369,7 +370,7 @@ export default function AiAgent() {
           </div>
 
           {/* Training Mode Selector */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
             <button
               type="button"
               onClick={() => setTrainingType('website')}
@@ -634,18 +635,18 @@ export default function AiAgent() {
           </div>
 
           {/* Agent Configuration & Custom Instructions Card */}
-          <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-xs">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-6">
+          <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-200 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 pb-4 mb-6 gap-3">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-orange-50 text-brand-orange rounded-lg">
+                <div className="p-2 bg-orange-50 text-brand-orange rounded-lg shrink-0">
                   <Bot className="w-6 h-6" />
                 </div>
-                <div>
-                  <h2 className="text-lg font-bold text-gray-900">{agent.name}</h2>
-                  <p className="text-xs text-gray-500">{agent.business_type} • Source: {agent.website_url}</p>
+                <div className="min-w-0">
+                  <h2 className="text-base sm:text-lg font-bold text-gray-900 truncate">{agent.name}</h2>
+                  <p className="text-xs text-gray-500 truncate">{agent.business_type} • Source: {agent.website_url}</p>
                 </div>
               </div>
-              <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+              <span className={`px-3 py-1 rounded-full text-xs font-bold self-start sm:self-auto shrink-0 ${
                 agent.status === 'active' ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-600'
               }`}>
                 {agent.status.toUpperCase()}
@@ -683,8 +684,8 @@ export default function AiAgent() {
 
       {/* TEST CHAT SIMULATOR MODAL */}
       {testChatOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl flex flex-col h-[580px] overflow-hidden border border-gray-100">
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl flex flex-col h-[560px] max-h-[90vh] overflow-hidden border border-gray-100">
             {/* Header */}
             <div className="p-4 bg-gradient-to-r from-brand-orange to-orange-600 text-white flex items-center justify-between">
               <div className="flex items-center gap-3">

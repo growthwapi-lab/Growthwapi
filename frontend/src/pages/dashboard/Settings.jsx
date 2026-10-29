@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   User, Building2, Phone, Mail, Lock, Smartphone,
-  AlertTriangle, Package, CheckCircle, Pencil, X
+  AlertTriangle, Package, CheckCircle, Pencil, X, Copy, Check
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import api from '../../lib/api'
@@ -30,6 +30,14 @@ export default function Settings() {
   const [saving, setSaving] = useState(false)
   const [savingWa, setSavingWa] = useState(false)
   const [changingPw, setChangingPw] = useState(false)
+  const [copiedKey, setCopiedKey] = useState('')
+
+  const copyToClipboard = (text, label) => {
+    navigator.clipboard.writeText(text)
+    setCopiedKey(label)
+    toast.success(`Copied ${label}!`)
+    setTimeout(() => setCopiedKey(''), 2000)
+  }
 
   useEffect(() => {
     fetchProfile()
@@ -190,7 +198,7 @@ export default function Settings() {
   const readonlyCls = "w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-4xl">
       <div>
         <h1 className="text-2xl font-bold text-brand-dark">Settings</h1>
         <p className="text-gray-500 mt-1">Manage your account and WhatsApp configuration.</p>
@@ -289,131 +297,218 @@ export default function Settings() {
 
       {/* WhatsApp Integration & Credentials */}
       <SectionCard title="WhatsApp Integration & Credentials" icon={Smartphone} color="text-green-600">
-
         {/* Connection Status Banner */}
         {waConnected ? (
-          <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-xl mb-5">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                <CheckCircle size={22} className="text-green-600" />
+          <div className="space-y-4 mb-5">
+            {/* Top Status Header */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-emerald-50/80 border border-emerald-200 rounded-2xl">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center shrink-0 shadow-2xs">
+                  <CheckCircle size={22} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
+                    <span className="font-bold text-emerald-900 text-sm">WhatsApp Business Connected</span>
+                  </div>
+                  {waSaved.display_phone && (
+                    <p className="text-emerald-700 text-xs font-mono font-semibold mt-0.5">
+                      {waSaved.display_phone}
+                    </p>
+                  )}
+                </div>
               </div>
-              <div>
-                <p className="font-bold text-green-800 text-sm flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-green-500 inline-block animate-pulse" />
-                  WhatsApp Connected
-                </p>
-                {waSaved.display_phone && (
-                  <p className="text-green-700 text-xs font-mono mt-0.5">{waSaved.display_phone}</p>
-                )}
-                <p className="text-gray-500 text-xs mt-0.5">
-                  Phone ID: <span className="font-mono">{waSaved.phone_number_id}</span>
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <button
-                onClick={() => { setEditingWa(true); setWaEdit({ phone_number_id: waSaved.phone_number_id, waba_id: waSaved.waba_id }) }}
-                className="flex items-center gap-1.5 text-xs font-semibold text-brand-blue hover:text-blue-800 bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm transition-colors"
-              >
-                <Pencil size={13} /> Edit
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-center justify-between p-3.5 bg-red-50 border border-red-200 rounded-xl mb-5">
-            <div>
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Connection Status</span>
-              <span className="font-bold text-sm text-red-700 flex items-center gap-1.5 mt-0.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-red-400 inline-block" />
-                Not Connected
-              </span>
-            </div>
-            <Link
-              to="/dashboard"
-              className="text-xs font-semibold text-brand-blue hover:underline bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm"
-            >
-              Connect via Meta Popup →
-            </Link>
-          </div>
-        )}
 
-        {/* Edit / Add form — shown when not connected OR when editing */}
-        {(!waConnected || editingWa) && (
-          <form onSubmit={handleWaSave} className="space-y-4 mb-5">
-            {editingWa && (
-              <div className="flex items-center justify-between mb-1">
-                <p className="text-sm font-semibold text-gray-700">Update WhatsApp Credentials</p>
+              <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
                 <button
                   type="button"
-                  onClick={() => setEditingWa(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  onClick={() => {
+                    setEditingWa(true)
+                    setWaEdit({ phone_number_id: waSaved.phone_number_id, waba_id: waSaved.waba_id })
+                  }}
+                  className="flex items-center gap-1.5 text-xs font-bold text-brand-blue hover:text-blue-800 bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-2xs hover:bg-gray-50 transition-all"
                 >
-                  <X size={18} />
+                  <Pencil size={13} /> Edit IDs
                 </button>
-              </div>
-            )}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                WhatsApp Phone Number ID
-              </label>
-              <input
-                type="text"
-                value={waEdit.phone_number_id}
-                onChange={e => setWaEdit({ ...waEdit, phone_number_id: e.target.value })}
-                placeholder="e.g. 1313417765190326"
-                className={inputCls}
-                required
-              />
-              <p className="text-xs text-gray-500 mt-1">Found in Meta Developer Console → WhatsApp → API Setup</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                WhatsApp Business Account ID (WABA ID)
-              </label>
-              <input
-                type="text"
-                value={waEdit.waba_id}
-                onChange={e => setWaEdit({ ...waEdit, waba_id: e.target.value })}
-                placeholder="e.g. 2201481664133864"
-                className={inputCls}
-                required
-              />
-              <p className="text-xs text-gray-500 mt-1">Found in Meta Business Manager → WhatsApp Accounts</p>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button
-                type="submit"
-                disabled={savingWa}
-                className="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 transition-colors disabled:opacity-50 text-sm shadow-sm"
-              >
-                {savingWa ? 'Saving...' : waConnected ? 'Update WhatsApp IDs' : 'Save & Connect'}
-              </button>
-              {waConnected && (
                 <button
                   type="button"
                   onClick={handleWaDisconnect}
                   disabled={savingWa}
-                  className="text-red-500 hover:text-red-700 text-sm font-semibold px-3 py-2 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
+                  className="text-xs font-bold text-red-600 hover:text-red-700 bg-white border border-red-200 px-3 py-1.5 rounded-lg shadow-2xs hover:bg-red-50 transition-all disabled:opacity-50"
                 >
                   Disconnect
+                </button>
+              </div>
+            </div>
+
+            {/* Grid of Verified Credentials */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="p-3.5 bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-between">
+                <div className="min-w-0 pr-2">
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Phone Number ID</span>
+                  <span className="font-mono text-xs text-gray-900 font-bold block truncate mt-0.5">
+                    {waSaved.phone_number_id || 'Not set'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(waSaved.phone_number_id, 'Phone ID')}
+                  className="p-1.5 text-gray-500 hover:text-brand-blue hover:bg-white rounded-lg transition-colors shrink-0"
+                  title="Copy Phone Number ID"
+                >
+                  {copiedKey === 'Phone ID' ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
+                </button>
+              </div>
+
+              <div className="p-3.5 bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-between">
+                <div className="min-w-0 pr-2">
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">WABA ID (Account)</span>
+                  <span className="font-mono text-xs text-gray-900 font-bold block truncate mt-0.5">
+                    {waSaved.waba_id || 'Not set'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(waSaved.waba_id, 'WABA ID')}
+                  className="p-1.5 text-gray-500 hover:text-brand-blue hover:bg-white rounded-lg transition-colors shrink-0"
+                  title="Copy WABA ID"
+                >
+                  {copiedKey === 'WABA ID' ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-amber-50 border border-amber-200 rounded-2xl mb-5 gap-3">
+            <div>
+              <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">WhatsApp Status</span>
+              <span className="font-bold text-sm text-amber-900 flex items-center gap-1.5 mt-0.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
+                Account Not Connected
+              </span>
+              <p className="text-xs text-amber-700 mt-1">Enter your Meta credentials below to enable sending and receiving WhatsApp messages.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Edit / Add Form */}
+        {(!waConnected || editingWa) && (
+          <form onSubmit={handleWaSave} className="space-y-4 mb-5 p-4 bg-gray-50/70 border border-gray-200 rounded-2xl animate-in fade-in duration-150">
+            {editingWa && (
+              <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+                <p className="text-xs font-bold text-gray-700 uppercase tracking-wider">Update WhatsApp IDs</p>
+                <button
+                  type="button"
+                  onClick={() => setEditingWa(false)}
+                  className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  WhatsApp Phone Number ID <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={waEdit.phone_number_id}
+                  onChange={e => setWaEdit({ ...waEdit, phone_number_id: e.target.value })}
+                  placeholder="e.g. 1313417765190326"
+                  className={inputCls}
+                  required
+                />
+                <p className="text-[11px] text-gray-500 mt-1">Meta Console → WhatsApp → API Setup</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  WABA ID (Business Account) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={waEdit.waba_id}
+                  onChange={e => setWaEdit({ ...waEdit, waba_id: e.target.value })}
+                  placeholder="e.g. 2201481664133864"
+                  className={inputCls}
+                  required
+                />
+                <p className="text-[11px] text-gray-500 mt-1">Meta Business Manager → WhatsApp Accounts</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                type="submit"
+                disabled={savingWa}
+                className="bg-green-600 text-white px-5 py-2 rounded-xl font-bold hover:bg-green-700 transition-colors disabled:opacity-50 text-xs shadow-xs"
+              >
+                {savingWa ? 'Saving...' : waConnected ? 'Update Credentials' : 'Save & Connect WhatsApp'}
+              </button>
+              {editingWa && (
+                <button
+                  type="button"
+                  onClick={() => setEditingWa(false)}
+                  className="px-4 py-2 text-xs font-semibold text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-colors"
+                >
+                  Cancel
                 </button>
               )}
             </div>
           </form>
         )}
 
-        {/* Webhook Info */}
-        <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 text-sm text-gray-600 space-y-2">
-          <p className="font-semibold text-brand-dark">Webhook Configuration</p>
-          <p>Set your Meta app's Webhook callback URL to:</p>
-          <code className="block bg-white border border-gray-200 px-3 py-2 rounded text-brand-blue font-mono text-xs select-all">
-            https://growthwapi-backend.onrender.com/api/whatsapp/webhook
-          </code>
-          <p className="text-xs text-gray-500">
-            Use <code className="font-mono bg-white px-1 rounded border">growthwapi_secure_2026</code> as the Verify Token in Meta App Settings.
+        {/* Webhook Configuration Guide Card */}
+        <div className="p-4 bg-gray-50/80 rounded-2xl border border-gray-200 space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="font-bold text-brand-dark text-xs uppercase tracking-wider">
+              Meta Webhook Callback Configuration
+            </p>
+            <span className="text-[10px] bg-blue-100 text-brand-blue font-bold px-2 py-0.5 rounded-full">
+              Incoming & Tick Events
+            </span>
+          </div>
+
+          <p className="text-xs text-gray-600">
+            Set the callback URL in your Meta App Dashboard under <strong>WhatsApp → Configuration → Webhook</strong>:
           </p>
+
+          <div className="space-y-2">
+            <div>
+              <span className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Callback URL</span>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 bg-white border border-gray-200 px-3 py-2 rounded-xl text-brand-blue font-mono text-xs truncate shadow-2xs select-all">
+                  https://growthwapi-backend.onrender.com/api/whatsapp/webhook
+                </code>
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard('https://growthwapi-backend.onrender.com/api/whatsapp/webhook', 'Webhook URL')}
+                  className="p-2 text-gray-600 hover:text-brand-blue bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors shadow-2xs shrink-0"
+                  title="Copy Webhook URL"
+                >
+                  {copiedKey === 'Webhook URL' ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <span className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Verify Token</span>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 bg-white border border-gray-200 px-3 py-2 rounded-xl text-brand-dark font-mono text-xs truncate shadow-2xs select-all font-bold">
+                  growthwapi_secure_2026
+                </code>
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard('growthwapi_secure_2026', 'Verify Token')}
+                  className="p-2 text-gray-600 hover:text-brand-blue bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors shadow-2xs shrink-0"
+                  title="Copy Verify Token"
+                >
+                  {copiedKey === 'Verify Token' ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </SectionCard>
 

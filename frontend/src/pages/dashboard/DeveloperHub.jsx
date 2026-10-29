@@ -322,24 +322,60 @@ echo $response;
         </div>
       </div>
 
-      {/* Tabs Navigation */}
-      <div className="flex items-center gap-2 border-b border-gray-200 pb-3">
+      {/* 3-Card Organized Tabs Navigation */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
-          { id: 'keys', label: 'API Keys', icon: Key },
-          { id: 'webhooks', label: 'Webhooks', icon: Webhook },
-          { id: 'docs', label: 'API Documentation & Code Snippets', icon: BookOpen },
+          {
+            id: 'keys',
+            label: 'API Keys',
+            sub: 'Access & secret project keys',
+            icon: Key,
+            color: 'text-brand-orange',
+            activeStyle: 'bg-orange-50 border-brand-orange shadow-xs ring-2 ring-brand-orange/20',
+            badge: `${apiKeys.length} Active`
+          },
+          {
+            id: 'webhooks',
+            label: 'Webhooks',
+            sub: 'Real-time event endpoints',
+            icon: Webhook,
+            color: 'text-brand-purple',
+            activeStyle: 'bg-purple-50 border-brand-purple shadow-xs ring-2 ring-brand-purple/20',
+            badge: `${webhooks.length} Active`
+          },
+          {
+            id: 'docs',
+            label: 'API Documentation',
+            sub: 'SDKs, cURL & code snippets',
+            icon: BookOpen,
+            color: 'text-brand-blue',
+            activeStyle: 'bg-blue-50 border-brand-blue shadow-xs ring-2 ring-brand-blue/20',
+            badge: 'V1 REST'
+          },
         ].map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-colors flex items-center gap-2 ${
+            className={`p-3.5 sm:p-4 rounded-2xl border text-left flex items-start justify-between transition-all ${
               activeTab === tab.id
-                ? 'bg-brand-blue text-white shadow-sm'
-                : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                ? tab.activeStyle
+                : 'bg-white border-gray-200 hover:border-gray-300 shadow-2xs hover:shadow-xs'
             }`}
           >
-            <tab.icon size={16} />
-            {tab.label}
+            <div className="flex items-start gap-3">
+              <div className={`p-2 sm:p-2.5 rounded-xl ${activeTab === tab.id ? 'bg-white shadow-2xs' : 'bg-gray-100'} ${tab.color}`}>
+                <tab.icon size={20} />
+              </div>
+              <div>
+                <div className="font-bold text-sm text-gray-900">{tab.label}</div>
+                <div className="text-xs text-gray-500 mt-0.5">{tab.sub}</div>
+              </div>
+            </div>
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+              activeTab === tab.id ? 'bg-white text-gray-700 shadow-2xs' : 'bg-gray-100 text-gray-500'
+            }`}>
+              {tab.badge}
+            </span>
           </button>
         ))}
       </div>

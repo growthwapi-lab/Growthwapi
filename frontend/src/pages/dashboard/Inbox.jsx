@@ -13,7 +13,9 @@ import {
   FileText,
   X,
   Download,
-  Trash2
+  Trash2,
+  CheckSquare,
+  Square
 } from 'lucide-react'
 import api from '../../lib/api'
 import toast from 'react-hot-toast'
@@ -46,6 +48,11 @@ export default function Inbox() {
   const [sending, setSending] = useState(false)
   const [resolving, setResolving] = useState(false)
 
+  // Multi-message select mode
+  const [isSelectMode, setIsSelectMode] = useState(false)
+  const [selectedMsgIds, setSelectedMsgIds] = useState(new Set())
+  const [deletingBatch, setDeletingBatch] = useState(false)
+
   const activeConvIdRef = useRef(null)
   const messagesEndRef = useRef(null)
   const fileInputRef = useRef(null)
@@ -71,6 +78,8 @@ export default function Inbox() {
   useEffect(() => {
     if (activeConv) {
       scrollToBottom(false)
+      setSelectedMsgIds(new Set())
+      setIsSelectMode(false)
     }
   }, [activeConv?.id])
 
@@ -86,14 +95,18 @@ export default function Inbox() {
       msgList.forEach((m) => {
         const phone = m.direction === 'outbound' ? m.to_number : m.from_number
         const getSnippet = () => {
-          if (m.content?.image) return '📷 Photo'
-          if (m.content?.document) return '📄 Document'
-          if (m.content?.audio) return '🎵 Voice / Audio'
-          if (m.content?.video) return '🎥 Video'
-          if (typeof m.content === 'string') return m.content
-          if (m.content?.text?.body) return m.content.text.body
-          if (m.content?.body) return m.content.body
-          if (m.content?.template?.name) return `📋 ${m.content.template.name}`
+          let c = m.content
+          if (typeof c === 'string') {
+            try { c = JSON.parse(c) } catch (e) {}
+          }
+          if (c?.image || m.message_type === 'image') return '📷 Photo'
+          if (c?.document || m.message_type === 'document') return '📄 Document'
+          if (c?.audio || m.message_type === 'audio' || m.message_type === 'voice') return '🎵 Voice / Audio'
+          if (c?.video || m.message_type === 'video') return '🎥 Video'
+          if (c?.text?.body) return c.text.body
+          if (c?.body) return c.body
+          if (c?.template?.name) return `📋 ${c.template.name}`
+          if (typeof c === 'string') return c
           return 'Message'
         }
 
@@ -311,17 +324,77 @@ export default function Inbox() {
     }
   }
 
+  // Toggle single message selection
+  const toggleSelectMessage = (msgId) => {
+    if (!msgId) return
+    setSelectedMsgIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(msgId)) {
+        next.delete(msgId)
+      } else {
+        next.add(msgId)
+      }
+      return next
+    })
+  }
+
+  // Select/Deselect all messages in active conversation
+  const handleSelectAll = () => {
+    if (!activeConv?.messages) return
+    if (selectedMsgIds.size === activeConv.messages.length) {
+      setSelectedMsgIds(new Set())
+    } else {
+      setSelectedMsgIds(new Set(activeConv.messages.map((m) => m.id)))
+    }
+  }
+
+  // Batch delete selected messages
+  const handleBatchDelete = async () => {
+    if (selectedMsgIds.size === 0 || deletingBatch) return
+    const count = selectedMsgIds.size
+    if (!window.confirm(`Are you sure you want to delete ${count} selected message${count > 1 ? 's' : ''}?`)) return
+
+    const idsToDelete = Array.from(selectedMsgIds)
+    setDeletingBatch(true)
+
+    // Optimistic removal from active conversation
+    setActiveConv((prev) => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        messages: prev.messages.filter((m) => !selectedMsgIds.has(m.id)),
+      }
+    })
+    setIsSelectMode(false)
+    setSelectedMsgIds(new Set())
+
+    try {
+      await api.post('/api/whatsapp/messages/batch-delete', { messageIds: idsToDelete })
+      toast.success(`${count} message${count > 1 ? 's' : ''} deleted successfully!`)
+    } catch (err) {
+      toast.error('Failed to delete messages')
+    } finally {
+      setDeletingBatch(false)
+      fetchMessages(true)
+    }
+  }
+
   // Render message body (handles Image, Document, Audio, Video, Template, Text)
   const renderMessageContent = (m) => {
-    const content = m.content || {}
+    let content = m.content || {}
+    if (typeof content === 'string') {
+      try {
+        content = JSON.parse(content)
+      } catch (e) {}
+    }
     const baseURL = api.defaults.baseURL || ''
 
     // 1. Image
-    const imgObj = content.image
-    if (imgObj) {
+    const imgObj = content?.image || (m.message_type === 'image' ? content : null)
+    if (imgObj && (imgObj.id || imgObj.previewUrl || imgObj.url || imgObj.link)) {
       const mediaId = imgObj.id
       const imgSrc = imgObj.previewUrl || (mediaId ? `${baseURL}/api/whatsapp/media-proxy/${mediaId}` : imgObj.url || imgObj.link)
-      const caption = imgObj.caption || ''
+      const caption = imgObj.caption || (typeof content.caption === 'string' ? content.caption : '')
       return (
         <div className="space-y-1.5">
           {imgSrc && (
@@ -339,8 +412,8 @@ export default function Inbox() {
     }
 
     // 2. Document / PDF
-    const docObj = content.document
-    if (docObj) {
+    const docObj = content?.document || (m.message_type === 'document' ? content : null)
+    if (docObj && (docObj.id || docObj.url || docObj.link)) {
       const docId = docObj.id
       const docSrc = docId ? `${baseURL}/api/whatsapp/media-proxy/${docId}` : docObj.url || docObj.link
       const filename = docObj.filename || 'Document.pdf'
@@ -374,8 +447,8 @@ export default function Inbox() {
     }
 
     // 3. Audio / Voice Note
-    const audioObj = content.audio
-    if (audioObj) {
+    const audioObj = content?.audio || content?.voice || (m.message_type === 'audio' || m.message_type === 'voice' ? content : null)
+    if (audioObj && (audioObj.id || audioObj.url)) {
       const audioId = audioObj.id
       const audioSrc = audioId ? `${baseURL}/api/whatsapp/media-proxy/${audioId}` : audioObj.url
       return (
@@ -386,8 +459,8 @@ export default function Inbox() {
     }
 
     // 4. Video
-    const videoObj = content.video
-    if (videoObj) {
+    const videoObj = content?.video || (m.message_type === 'video' ? content : null)
+    if (videoObj && (videoObj.id || videoObj.url)) {
       const videoId = videoObj.id
       const videoSrc = videoId ? `${baseURL}/api/whatsapp/media-proxy/${videoId}` : videoObj.url
       return (
@@ -399,7 +472,7 @@ export default function Inbox() {
     }
 
     // 5. Template Message
-    if (content.template?.name) {
+    if (content?.template?.name) {
       return (
         <div className="p-1 font-mono text-xs text-blue-900 bg-blue-50/60 rounded-lg border border-blue-100">
           📋 <strong>Template Sent:</strong> {content.template.name}
@@ -408,7 +481,7 @@ export default function Inbox() {
     }
 
     // 6. Interactive Button Reply
-    if (content.type === 'interactive' && content.interactive?.button_reply?.title) {
+    if (content?.type === 'interactive' && content?.interactive?.button_reply?.title) {
       return <p className="font-semibold text-brand-blue">🔘 {content.interactive.button_reply.title}</p>
     }
 
@@ -421,7 +494,7 @@ export default function Inbox() {
     } else if (content?.body) {
       bodyText = content.body
     } else {
-      bodyText = content?.text?.body || JSON.stringify(content)
+      bodyText = content?.text?.body || ''
     }
 
     return <p className="whitespace-pre-wrap leading-relaxed">{bodyText}</p>
@@ -477,45 +550,91 @@ export default function Inbox() {
         {activeConv ? (
           <>
             {/* Active Chat Header */}
-            <div className="p-3.5 border-b border-gray-200 flex items-center justify-between bg-white shadow-xs z-10">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-brand-blue rounded-full flex items-center justify-center text-white font-bold">
-                  <User size={18} />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-brand-dark text-sm">{activeConv.name}</h3>
-                    {activeConv.needsHuman && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 border border-red-200">
-                        <AlertCircle className="w-3 h-3" />
-                        Needs Human
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-400 font-mono">{activeConv.phone}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {activeConv.needsHuman && (
+            {isSelectMode ? (
+              <div className="p-3.5 border-b border-blue-200 flex items-center justify-between bg-blue-50/90 shadow-xs z-10 animate-in fade-in duration-150">
+                <div className="flex items-center gap-3">
                   <button
-                    onClick={handleResolveHumanHandOff}
-                    disabled={resolving}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white font-semibold text-xs rounded-lg hover:bg-emerald-700 transition-colors shadow-xs disabled:opacity-50"
+                    onClick={() => {
+                      setIsSelectMode(false)
+                      setSelectedMsgIds(new Set())
+                    }}
+                    className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-white rounded-lg transition-colors"
+                    title="Cancel Selection"
                   >
-                    <CheckCircle className="w-4 h-4" />
-                    Mark as Resolved
+                    <X className="w-5 h-5" />
                   </button>
-                )}
-                <button
-                  onClick={() => handleDeleteConversation(activeConv.phone)}
-                  className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  title="Delete Conversation"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                  <span className="font-bold text-sm text-gray-800">
+                    {selectedMsgIds.size} Selected
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleSelectAll}
+                    className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-2xs"
+                  >
+                    {selectedMsgIds.size === activeConv.messages.length ? 'Deselect All' : 'Select All'}
+                  </button>
+                  <button
+                    onClick={handleBatchDelete}
+                    disabled={selectedMsgIds.size === 0 || deletingBatch}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white font-semibold text-xs rounded-lg hover:bg-red-700 transition-colors shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    {deletingBatch ? 'Deleting...' : `Delete (${selectedMsgIds.size})`}
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="p-3.5 border-b border-gray-200 flex items-center justify-between bg-white shadow-xs z-10">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-brand-blue rounded-full flex items-center justify-center text-white font-bold">
+                    <User size={18} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-brand-dark text-sm">{activeConv.name}</h3>
+                      {activeConv.needsHuman && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 border border-red-200">
+                          <AlertCircle className="w-3 h-3" />
+                          Needs Human
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-400 font-mono">{activeConv.phone}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsSelectMode(true)}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-gray-600 hover:text-brand-blue hover:bg-blue-50 border border-gray-200 rounded-lg transition-colors"
+                    title="Select messages to delete"
+                  >
+                    <CheckSquare className="w-4 h-4" />
+                    Select
+                  </button>
+
+                  {activeConv.needsHuman && (
+                    <button
+                      onClick={handleResolveHumanHandOff}
+                      disabled={resolving}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white font-semibold text-xs rounded-lg hover:bg-emerald-700 transition-colors shadow-xs disabled:opacity-50"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      Mark as Resolved
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleDeleteConversation(activeConv.phone)}
+                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Delete Conversation"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Chat Thread */}
             <div className="flex-1 p-6 overflow-y-auto flex flex-col gap-3">
@@ -524,29 +643,60 @@ export default function Inbox() {
                 .reverse()
                 .map((m, idx) => {
                   const isOutbound = m.direction === 'outbound'
+                  const isSelected = selectedMsgIds.has(m.id)
 
                   return (
                     <div
                       key={m.id || idx}
+                      onClick={() => {
+                        if (isSelectMode && m.id && !String(m.id).startsWith('temp_')) {
+                          toggleSelectMessage(m.id)
+                        }
+                      }}
                       className={`group max-w-[75%] p-3 rounded-2xl text-sm relative shadow-xs transition-all ${
+                        isSelectMode ? 'cursor-pointer select-none' : ''
+                      } ${
+                        isSelected
+                          ? 'ring-2 ring-brand-blue ring-offset-2 scale-[1.01]'
+                          : ''
+                      } ${
                         isOutbound
                           ? 'self-end bg-[#d9fdd3] text-gray-900 rounded-tr-none border border-emerald-100'
                           : 'self-start bg-white text-gray-900 rounded-tl-none border border-gray-200'
                       }`}
                     >
+                      {/* Checkbox row in select mode */}
+                      {isSelectMode && (
+                        <div className="mb-2 flex items-center gap-2 pb-1.5 border-b border-black/5 text-xs">
+                          {isSelected ? (
+                            <CheckSquare className="w-4 h-4 text-brand-blue shrink-0" />
+                          ) : (
+                            <Square className="w-4 h-4 text-gray-400 shrink-0" />
+                          )}
+                          <span className="text-[11px] font-medium text-gray-600">
+                            {isSelected ? 'Selected' : 'Click to select'}
+                          </span>
+                        </div>
+                      )}
+
                       {/* Rich Content: Image / Document / Text */}
                       {renderMessageContent(m)}
 
                       <div className="flex items-center justify-end gap-1.5 mt-1.5">
-                        {/* Hover Delete Button for this single message */}
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteMessage(m.id)}
-                          className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-red-600 rounded transition-opacity"
-                          title="Delete message"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {/* Hover Delete Button for this single message (when not in select mode) */}
+                        {!isSelectMode && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDeleteMessage(m.id)
+                            }}
+                            className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-red-600 rounded transition-opacity"
+                            title="Delete message"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
 
                         {m.needs_human && (
                           <span className="text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-100 mr-1">

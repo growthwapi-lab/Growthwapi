@@ -208,9 +208,24 @@ router.get('/media-proxy/:mediaId', async (req, res) => {
     const { mediaId } = req.params;
     if (!mediaId) return res.status(400).send('Missing mediaId');
 
+    let token = process.env.WHATSAPP_ACCESS_TOKEN;
+    if (!token) {
+      const { data: userRow } = await supabaseAdmin
+        .from('users')
+        .select('whatsapp_access_token')
+        .not('whatsapp_access_token', 'is', null)
+        .limit(1)
+        .maybeSingle();
+      token = userRow?.whatsapp_access_token;
+    }
+
+    if (!token) {
+      return res.status(500).send('WhatsApp access token not configured');
+    }
+
     // 1. Get binary URL from Meta Graph API
     const metaRes = await axios.get(`https://graph.facebook.com/v18.0/${mediaId}`, {
-      headers: { Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}` }
+      headers: { Authorization: `Bearer ${token}` }
     });
     const mediaUrl = metaRes.data?.url;
     const mimeType = metaRes.data?.mime_type || 'image/jpeg';
@@ -221,7 +236,7 @@ router.get('/media-proxy/:mediaId', async (req, res) => {
 
     // 2. Fetch the binary stream
     const fileRes = await axios.get(mediaUrl, {
-      headers: { Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}` },
+      headers: { Authorization: `Bearer ${token}` },
       responseType: 'arraybuffer'
     });
 
@@ -792,6 +807,27 @@ router.delete('/messages/:id', auth, async (req, res) => {
 
     if (error) throw error;
     res.json({ success: true, message: 'Message deleted successfully.' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST batch delete selected messages
+router.post('/messages/batch-delete', auth, async (req, res) => {
+  try {
+    const { messageIds } = req.body;
+    if (!Array.isArray(messageIds) || messageIds.length === 0) {
+      return res.status(400).json({ error: 'No message IDs provided' });
+    }
+
+    const { error } = await supabaseAdmin
+      .from('messages')
+      .delete()
+      .eq('user_id', req.user.id)
+      .in('id', messageIds);
+
+    if (error) throw error;
+    res.json({ success: true, count: messageIds.length });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

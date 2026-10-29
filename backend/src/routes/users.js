@@ -107,19 +107,42 @@ router.put('/profile', auth, async (req, res) => {
   }
 });
 
-// PUT WhatsApp Business Configuration (Manual connection by user)
+// GET WhatsApp Business Configuration for current user
+router.get('/whatsapp-config', auth, async (req, res) => {
+  try {
+    const user = await getOrCreateUser(req.user);
+    res.json({
+      phone_number_id: user.whatsapp_phone_number_id || null,
+      waba_id: user.whatsapp_waba_id || null,
+      display_phone: user.whatsapp_display_phone || null,
+      is_connected: Boolean(user.whatsapp_phone_number_id),
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT WhatsApp Business Configuration (Manual connection or disconnect)
 router.put('/whatsapp-config', auth, async (req, res) => {
   const { phone_number_id, waba_id } = req.body;
+  // Allow empty strings to disconnect; but if one is provided the other must be too
+  const isDisconnect = !phone_number_id && !waba_id;
+  if (!isDisconnect && (!phone_number_id || !waba_id)) {
+    return res.status(400).json({ error: 'Both Phone Number ID and WABA ID are required.' });
+  }
   try {
     await getOrCreateUser(req.user);
 
+    // Build update object — null clears the value (for disconnect)
+    const updatePayload = {
+      whatsapp_phone_number_id: (phone_number_id && phone_number_id.trim()) ? phone_number_id.trim() : null,
+      whatsapp_waba_id: (waba_id && waba_id.trim()) ? waba_id.trim() : null,
+      updated_at: new Date().toISOString()
+    };
+
     const { data, error } = await supabaseAdmin
       .from('users')
-      .update({
-        whatsapp_phone_number_id: phone_number_id ? phone_number_id.trim() : null,
-        whatsapp_waba_id: waba_id ? waba_id.trim() : null,
-        updated_at: new Date().toISOString()
-      })
+      .update(updatePayload)
       .eq('id', req.user.id)
       .select()
       .single();
@@ -127,6 +150,7 @@ router.put('/whatsapp-config', auth, async (req, res) => {
     if (error) throw error;
     res.json({ success: true, message: 'WhatsApp configuration saved successfully!', user: data });
   } catch (error) {
+    console.error('whatsapp-config PUT error:', error);
     res.status(500).json({ error: error.message });
   }
 });

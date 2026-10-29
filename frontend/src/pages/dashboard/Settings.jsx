@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { User, Building2, Phone, Mail, Lock, Smartphone, Info, AlertTriangle, Package, ShieldCheck } from 'lucide-react'
+import {
+  User, Building2, Phone, Mail, Lock, Smartphone,
+  AlertTriangle, Package, CheckCircle, Pencil, X
+} from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import api from '../../lib/api'
 import toast from 'react-hot-toast'
@@ -8,18 +11,22 @@ import { supabase } from '../../lib/supabase'
 
 export default function Settings() {
   const { user } = useAuth()
+
   const [profile, setProfile] = useState({
     name: user?.user_metadata?.name || '',
     business_name: user?.user_metadata?.business_name || '',
     phone: user?.user_metadata?.phone || '',
     email: user?.email || '',
   })
-  const [wa, setWa] = useState({
-    phone_number_id: '',
-    waba_id: '',
-  })
+
+  // WhatsApp state — separate "saved" from "editing" values
+  const [waConnected, setWaConnected] = useState(false)
+  const [waSaved, setWaSaved] = useState({ phone_number_id: '', waba_id: '', display_phone: '' })
+  const [waEdit, setWaEdit] = useState({ phone_number_id: '', waba_id: '' })
+  const [editingWa, setEditingWa] = useState(false)
+
   const [activePlan, setActivePlan] = useState(null)
-  const [passwords, setPasswords] = useState({ current: '', new_: '', confirm: '' })
+  const [passwords, setPasswords] = useState({ new_: '', confirm: '' })
   const [saving, setSaving] = useState(false)
   const [savingWa, setSavingWa] = useState(false)
   const [changingPw, setChangingPw] = useState(false)
@@ -36,15 +43,20 @@ export default function Settings() {
       const res = await api.get('/api/users/profile')
       if (res.data) {
         setProfile({
-          name: res.data.name || user?.user_metadata?.name || user?.user_metadata?.full_name || '',
+          name: res.data.name || user?.user_metadata?.name || '',
           business_name: res.data.business_name || user?.user_metadata?.business_name || '',
           phone: res.data.phone || user?.user_metadata?.phone || '',
           email: res.data.email || user?.email || '',
         })
-        setWa({
-          phone_number_id: res.data.whatsapp_phone_number_id || '',
-          waba_id: res.data.whatsapp_waba_id || '',
-        })
+
+        const phoneId = res.data.whatsapp_phone_number_id || ''
+        const wabaId = res.data.whatsapp_waba_id || ''
+        const displayPhone = res.data.whatsapp_display_phone || ''
+
+        setWaSaved({ phone_number_id: phoneId, waba_id: wabaId, display_phone: displayPhone })
+        setWaEdit({ phone_number_id: phoneId, waba_id: wabaId })
+        setWaConnected(Boolean(phoneId))
+        setEditingWa(false) // reset editing state on fresh fetch
       }
     } catch (err) {
       console.error('Error fetching profile:', err)
@@ -53,16 +65,47 @@ export default function Settings() {
 
   const handleWaSave = async (e) => {
     e.preventDefault()
+    if (!waEdit.phone_number_id.trim() || !waEdit.waba_id.trim()) {
+      return toast.error('Please enter both Phone Number ID and WABA ID.')
+    }
+    setSavingWa(true)
+    try {
+      const res = await api.put('/api/users/whatsapp-config', {
+        phone_number_id: waEdit.phone_number_id.trim(),
+        waba_id: waEdit.waba_id.trim(),
+      })
+      toast.success('✅ WhatsApp credentials saved successfully!')
+      // Update local state immediately so UI switches to "Connected"
+      const saved = {
+        phone_number_id: waEdit.phone_number_id.trim(),
+        waba_id: waEdit.waba_id.trim(),
+        display_phone: res.data?.user?.whatsapp_display_phone || '',
+      }
+      setWaSaved(saved)
+      setWaConnected(true)
+      setEditingWa(false)
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to save WhatsApp credentials')
+    } finally {
+      setSavingWa(false)
+    }
+  }
+
+  const handleWaDisconnect = async () => {
+    if (!window.confirm('Are you sure you want to disconnect your WhatsApp account?')) return
     setSavingWa(true)
     try {
       await api.put('/api/users/whatsapp-config', {
-        phone_number_id: wa.phone_number_id,
-        waba_id: wa.waba_id,
+        phone_number_id: '',
+        waba_id: '',
       })
-      toast.success('🎉 WhatsApp Business credentials saved successfully!')
-      fetchProfile()
+      setWaSaved({ phone_number_id: '', waba_id: '', display_phone: '' })
+      setWaEdit({ phone_number_id: '', waba_id: '' })
+      setWaConnected(false)
+      setEditingWa(false)
+      toast.success('WhatsApp account disconnected.')
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to save WhatsApp credentials')
+      toast.error('Failed to disconnect. Please try again.')
     } finally {
       setSavingWa(false)
     }
@@ -72,21 +115,15 @@ export default function Settings() {
     if (!phoneStr) return ''
     let cleaned = phoneStr.trim().replace(/[\s\-\(\)]/g, '')
     if (!cleaned.startsWith('+')) {
-      if (/^\d{10}$/.test(cleaned)) {
-        cleaned = '+91' + cleaned
-      } else if (/^\d{11,14}$/.test(cleaned)) {
-        cleaned = '+' + cleaned
-      }
+      if (/^\d{10}$/.test(cleaned)) cleaned = '+91' + cleaned
+      else if (/^\d{11,14}$/.test(cleaned)) cleaned = '+' + cleaned
     }
     return cleaned
   }
 
   const handleProfileSave = async (e) => {
     e.preventDefault()
-
-    if (!profile.name.trim()) {
-      return toast.error('Full Name is required.')
-    }
+    if (!profile.name.trim()) return toast.error('Full Name is required.')
 
     let formattedPhone = profile.phone ? formatPhoneWithCountryCode(profile.phone) : ''
     if (profile.phone && !/^\+[1-9]\d{7,14}$/.test(formattedPhone)) {
@@ -100,24 +137,20 @@ export default function Settings() {
         business_name: profile.business_name.trim(),
         phone: formattedPhone,
       })
-
       setProfile(prev => ({
         ...prev,
         name: res.data.name || profile.name,
         business_name: res.data.business_name || profile.business_name,
-        phone: res.data.phone || formattedPhone
+        phone: res.data.phone || formattedPhone,
       }))
-
-      // Also sync user metadata in Supabase auth
       await supabase.auth.updateUser({
         data: {
           name: profile.name.trim(),
           full_name: profile.name.trim(),
           business_name: profile.business_name.trim(),
-          phone: formattedPhone
+          phone: formattedPhone,
         }
       }).catch(() => {})
-
       toast.success('Profile updated successfully!')
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to update profile')
@@ -128,20 +161,14 @@ export default function Settings() {
 
   const handlePasswordChange = async (e) => {
     e.preventDefault()
-    if (passwords.new_ !== passwords.confirm) {
-      toast.error('New passwords do not match.')
-      return
-    }
-    if (passwords.new_.length < 6) {
-      toast.error('Password must be at least 6 characters.')
-      return
-    }
+    if (passwords.new_ !== passwords.confirm) return toast.error('New passwords do not match.')
+    if (passwords.new_.length < 6) return toast.error('Password must be at least 6 characters.')
     setChangingPw(true)
     try {
       const { error } = await supabase.auth.updateUser({ password: passwords.new_ })
       if (error) throw error
       toast.success('Password changed successfully!')
-      setPasswords({ current: '', new_: '', confirm: '' })
+      setPasswords({ new_: '', confirm: '' })
     } catch (err) {
       toast.error(err.message || 'Failed to change password')
     } finally {
@@ -260,71 +287,124 @@ export default function Settings() {
         )}
       </SectionCard>
 
-      {/* WhatsApp Settings & Credentials */}
+      {/* WhatsApp Integration & Credentials */}
       <SectionCard title="WhatsApp Integration & Credentials" icon={Smartphone} color="text-green-600">
-        <div className="flex items-center justify-between p-3.5 bg-gray-50 border border-gray-200 rounded-lg mb-4">
-          <div>
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Connection Status</span>
-            <span className="font-bold text-sm text-brand-dark flex items-center gap-1.5 mt-0.5">
-              {wa.phone_number_id ? (
-                <>
-                  <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block animate-pulse"></span>
-                  Connected (Phone ID: {wa.phone_number_id})
-                </>
-              ) : (
-                <>
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-400 inline-block"></span>
-                  Not Connected
-                </>
+
+        {/* Connection Status Banner */}
+        {waConnected ? (
+          <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-xl mb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <CheckCircle size={22} className="text-green-600" />
+              </div>
+              <div>
+                <p className="font-bold text-green-800 text-sm flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-green-500 inline-block animate-pulse" />
+                  WhatsApp Connected
+                </p>
+                {waSaved.display_phone && (
+                  <p className="text-green-700 text-xs font-mono mt-0.5">{waSaved.display_phone}</p>
+                )}
+                <p className="text-gray-500 text-xs mt-0.5">
+                  Phone ID: <span className="font-mono">{waSaved.phone_number_id}</span>
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                onClick={() => { setEditingWa(true); setWaEdit({ phone_number_id: waSaved.phone_number_id, waba_id: waSaved.waba_id }) }}
+                className="flex items-center gap-1.5 text-xs font-semibold text-brand-blue hover:text-blue-800 bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm transition-colors"
+              >
+                <Pencil size={13} /> Edit
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between p-3.5 bg-red-50 border border-red-200 rounded-xl mb-5">
+            <div>
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Connection Status</span>
+              <span className="font-bold text-sm text-red-700 flex items-center gap-1.5 mt-0.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-400 inline-block" />
+                Not Connected
+              </span>
+            </div>
+            <Link
+              to="/dashboard"
+              className="text-xs font-semibold text-brand-blue hover:underline bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm"
+            >
+              Connect via Meta Popup →
+            </Link>
+          </div>
+        )}
+
+        {/* Edit / Add form — shown when not connected OR when editing */}
+        {(!waConnected || editingWa) && (
+          <form onSubmit={handleWaSave} className="space-y-4 mb-5">
+            {editingWa && (
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-sm font-semibold text-gray-700">Update WhatsApp Credentials</p>
+                <button
+                  type="button"
+                  onClick={() => setEditingWa(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                WhatsApp Phone Number ID
+              </label>
+              <input
+                type="text"
+                value={waEdit.phone_number_id}
+                onChange={e => setWaEdit({ ...waEdit, phone_number_id: e.target.value })}
+                placeholder="e.g. 1313417765190326"
+                className={inputCls}
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">Found in Meta Developer Console → WhatsApp → API Setup</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                WhatsApp Business Account ID (WABA ID)
+              </label>
+              <input
+                type="text"
+                value={waEdit.waba_id}
+                onChange={e => setWaEdit({ ...waEdit, waba_id: e.target.value })}
+                placeholder="e.g. 2201481664133864"
+                className={inputCls}
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">Found in Meta Business Manager → WhatsApp Accounts</p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="submit"
+                disabled={savingWa}
+                className="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 transition-colors disabled:opacity-50 text-sm shadow-sm"
+              >
+                {savingWa ? 'Saving...' : waConnected ? 'Update WhatsApp IDs' : 'Save & Connect'}
+              </button>
+              {waConnected && (
+                <button
+                  type="button"
+                  onClick={handleWaDisconnect}
+                  disabled={savingWa}
+                  className="text-red-500 hover:text-red-700 text-sm font-semibold px-3 py-2 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
+                >
+                  Disconnect
+                </button>
               )}
-            </span>
-          </div>
-          <Link
-            to="/dashboard"
-            className="text-xs font-semibold text-brand-blue hover:underline bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm"
-          >
-            Connect via Meta Popup →
-          </Link>
-        </div>
+            </div>
+          </form>
+        )}
 
-        <form onSubmit={handleWaSave} className="space-y-4 mb-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              WhatsApp Phone Number ID
-            </label>
-            <input
-              type="text"
-              value={wa.phone_number_id}
-              onChange={e => setWa({ ...wa, phone_number_id: e.target.value })}
-              placeholder="e.g. 1313417765190326"
-              className={inputCls}
-            />
-            <p className="text-xs text-gray-500 mt-1">Found in Meta Developer Console → WhatsApp → API Setup</p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              WhatsApp Business Account ID (WABA ID)
-            </label>
-            <input
-              type="text"
-              value={wa.waba_id}
-              onChange={e => setWa({ ...wa, waba_id: e.target.value })}
-              placeholder="e.g. 2201481664133864"
-              className={inputCls}
-            />
-            <p className="text-xs text-gray-500 mt-1">Found in Meta Business Manager → WhatsApp Accounts</p>
-          </div>
-
-          <button
-            type="submit"
-            disabled={savingWa}
-            className="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 transition-colors disabled:opacity-50 text-sm shadow-sm"
-          >
-            {savingWa ? 'Saving...' : 'Save WhatsApp IDs'}
-          </button>
-        </form>
-
+        {/* Webhook Info */}
         <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 text-sm text-gray-600 space-y-2">
           <p className="font-semibold text-brand-dark">Webhook Configuration</p>
           <p>Set your Meta app's Webhook callback URL to:</p>

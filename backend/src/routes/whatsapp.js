@@ -705,18 +705,43 @@ router.post('/embedded-signup-callback', auth, async (req, res) => {
       }
     }
 
-    const { data: updatedUser, error } = await supabaseAdmin
-      .from('users')
-      .update({
-        whatsapp_phone_number_id: finalPhoneId || null,
-        whatsapp_waba_id: finalWabaId || null,
-        ...(displayPhoneNumber ? { whatsapp_display_phone: displayPhoneNumber } : {})
-      })
-      .eq('id', user.id)
-      .select()
-      .single();
+    // Build update payload — whatsapp_display_phone is optional (column may not exist in older DBs)
+    const updatePayload = {
+      whatsapp_phone_number_id: finalPhoneId || null,
+      whatsapp_waba_id: finalWabaId || null,
+      updated_at: new Date().toISOString(),
+    };
 
-    if (error) throw error;
+    // First attempt includes display phone; fallback without it
+    let updatedUser;
+    {
+      const firstPayload = displayPhoneNumber
+        ? { ...updatePayload, whatsapp_display_phone: displayPhoneNumber }
+        : updatePayload;
+
+      const { data, error } = await supabaseAdmin
+        .from('users')
+        .update(firstPayload)
+        .eq('id', user.id)
+        .select()
+        .single();
+
+      if (error && displayPhoneNumber) {
+        // Retry without the optional column
+        console.warn('Retrying update without whatsapp_display_phone:', error.message);
+        const { data: data2, error: error2 } = await supabaseAdmin
+          .from('users')
+          .update(updatePayload)
+          .eq('id', user.id)
+          .select()
+          .single();
+        if (error2) throw error2;
+        updatedUser = data2;
+      } else {
+        if (error) throw error;
+        updatedUser = data;
+      }
+    }
 
     res.json({
       success: true,

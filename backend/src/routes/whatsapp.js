@@ -550,17 +550,25 @@ router.post('/webhook', async (req, res) => {
           }
 
           if (matchedUser) {
-            await supabaseAdmin.from('messages').insert({
+            const sentAtIso = message.timestamp
+              ? new Date(parseInt(message.timestamp) * 1000).toISOString()
+              : new Date().toISOString();
+
+            const { error: insErr } = await supabaseAdmin.from('messages').insert({
               user_id: matchedUser.id,
               wa_account_id: matchedUser.whatsapp_waba_id || process.env.WHATSAPP_WABA_ID,
               from_number: message.from,
               to_number: toNumber,
-              message_type: message.type,
+              message_type: message.type || 'text',
               direction: 'inbound',
               content: message,
-              status: 'received',
-              sent_at: new Date(message.timestamp * 1000).toISOString()
+              status: 'delivered',
+              sent_at: sentAtIso
             });
+
+            if (insErr) {
+              console.error('Failed to insert incoming message into Supabase:', insErr);
+            }
 
             // Non-blocking trigger for AI Agent Auto-Reply
             handleIncomingAiReply(matchedUser.id, message, metaPhoneId).catch((err) => {

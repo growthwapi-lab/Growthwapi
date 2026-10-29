@@ -107,6 +107,30 @@ router.put('/profile', auth, async (req, res) => {
   }
 });
 
+// PUT WhatsApp Business Configuration (Manual connection by user)
+router.put('/whatsapp-config', auth, async (req, res) => {
+  const { phone_number_id, waba_id } = req.body;
+  try {
+    await getOrCreateUser(req.user);
+
+    const { data, error } = await supabaseAdmin
+      .from('users')
+      .update({
+        whatsapp_phone_number_id: phone_number_id ? phone_number_id.trim() : null,
+        whatsapp_waba_id: waba_id ? waba_id.trim() : null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', req.user.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json({ success: true, message: 'WhatsApp configuration saved successfully!', user: data });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // POST Check Trial Eligibility
 router.post('/check-eligibility', auth, async (req, res) => {
   const { phone } = req.body;

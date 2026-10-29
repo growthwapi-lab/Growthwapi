@@ -7,12 +7,47 @@ const { handleIncomingAiReply } = require('../utils/aiAutoReply');
 
 const router = express.Router();
 
+// Helper to resolve WhatsApp credentials for a given user
+async function getUserWhatsAppConfig(userId, userEmail) {
+  const { data: userProfile } = await supabaseAdmin
+    .from('users')
+    .select('whatsapp_phone_number_id, whatsapp_waba_id, email')
+    .eq('id', userId)
+    .maybeSingle();
 
-const WA_URL = `https://graph.facebook.com/v18.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
-const WA_HEADERS = {
-  Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,
-  'Content-Type': 'application/json',
-};
+  const phoneId = userProfile?.whatsapp_phone_number_id;
+  const wabaId = userProfile?.whatsapp_waba_id;
+  const email = (userProfile?.email || userEmail || '').toLowerCase();
+
+  // 1. If user has connected their own WhatsApp Business account
+  if (phoneId) {
+    return {
+      phoneId,
+      wabaId: wabaId || process.env.WHATSAPP_WABA_ID,
+      accessToken: process.env.WHATSAPP_ACCESS_TOKEN,
+      isConnected: true,
+    };
+  }
+
+  // 2. Fallback ONLY for system admin (sauravrai8757@gmail.com)
+  if (email === 'sauravrai8757@gmail.com' && process.env.WHATSAPP_PHONE_NUMBER_ID) {
+    return {
+      phoneId: process.env.WHATSAPP_PHONE_NUMBER_ID,
+      wabaId: process.env.WHATSAPP_WABA_ID,
+      accessToken: process.env.WHATSAPP_ACCESS_TOKEN,
+      isConnected: true,
+      isAdminDefault: true,
+    };
+  }
+
+  // 3. User has NOT connected WhatsApp
+  return {
+    phoneId: null,
+    wabaId: null,
+    accessToken: null,
+    isConnected: false,
+  };
+}
 
 // Send single message
 router.post('/send', auth, trialCheck, async (req, res) => {
@@ -20,6 +55,19 @@ router.post('/send', auth, trialCheck, async (req, res) => {
   const user = req.user;
 
   try {
+    const waConfig = await getUserWhatsAppConfig(user.id, user.email);
+    if (!waConfig.isConnected) {
+      return res.status(400).json({
+        error: 'Please connect your WhatsApp Business account first from the Dashboard or Settings to send messages.'
+      });
+    }
+
+    const waUrl = `https://graph.facebook.com/v18.0/${waConfig.phoneId}/messages`;
+    const waHeaders = {
+      Authorization: `Bearer ${waConfig.accessToken}`,
+      'Content-Type': 'application/json',
+    };
+
     let data = {
       messaging_product: 'whatsapp',
       to: to,
@@ -32,13 +80,13 @@ router.post('/send', auth, trialCheck, async (req, res) => {
       data.text = text;
     }
 
-    const response = await axios.post(WA_URL, data, { headers: WA_HEADERS });
+    const response = await axios.post(waUrl, data, { headers: waHeaders });
 
     // Store in DB
     await supabaseAdmin.from('messages').insert({
       user_id: user.id,
-      wa_account_id: process.env.WHATSAPP_WABA_ID,
-      from_number: process.env.WHATSAPP_PHONE_NUMBER_ID,
+      wa_account_id: waConfig.wabaId,
+      from_number: waConfig.phoneId,
       to_number: to,
       message_type: type,
       direction: 'outbound',
@@ -58,6 +106,20 @@ router.post('/send', auth, trialCheck, async (req, res) => {
 // Broadcast (Supports free-text and template broadcasts)
 router.post('/broadcast', auth, trialCheck, async (req, res) => {
   const { numbers, type, template, text, name, useTemplate, templateName, languageCode, components } = req.body;
+
+  const waConfig = await getUserWhatsAppConfig(req.user.id, req.user.email);
+  if (!waConfig.isConnected) {
+    return res.status(400).json({
+      error: 'Please connect your WhatsApp Business account first from Dashboard or Settings before sending broadcasts.'
+    });
+  }
+
+  const waUrl = `https://graph.facebook.com/v18.0/${waConfig.phoneId}/messages`;
+  const waHeaders = {
+    Authorization: `Bearer ${waConfig.accessToken}`,
+    'Content-Type': 'application/json',
+  };
+
   const results = [];
   let sentCount = 0;
   let failedCount = 0;
@@ -81,12 +143,12 @@ router.post('/broadcast', auth, trialCheck, async (req, res) => {
         data.text = text;
       }
 
-      const response = await axios.post(WA_URL, data, { headers: WA_HEADERS });
+      const response = await axios.post(waUrl, data, { headers: waHeaders });
 
       await supabaseAdmin.from('messages').insert({
         user_id: req.user.id,
-        wa_account_id: process.env.WHATSAPP_WABA_ID,
-        from_number: process.env.WHATSAPP_PHONE_NUMBER_ID,
+        wa_account_id: waConfig.wabaId,
+        from_number: waConfig.phoneId,
         to_number: to,
         message_type: data.type,
         direction: 'outbound',
@@ -204,7 +266,11 @@ router.post('/templates', auth, async (req, res) => {
   }
 
   try {
-    const wabaId = process.env.WHATSAPP_WABA_ID;
+    const waConfig = await getUserWhatsAppConfig(req.user.id, req.user.email);
+    if (!waConfig.isConnected || !waConfig.wabaId) {
+      return res.status(400).json({ error: 'Please connect your WhatsApp Business Account (WABA) before creating templates.' });
+    }
+    const wabaId = waConfig.wabaId;
     const metaUrl = `https://graph.facebook.com/v20.0/${wabaId}/message_templates`;
 
     // Construct Meta components array
@@ -323,11 +389,15 @@ router.post('/templates', auth, async (req, res) => {
 // 3. SYNC / IMPORT Templates from Meta WABA
 router.post('/templates/sync', auth, async (req, res) => {
   try {
-    const wabaId = process.env.WHATSAPP_WABA_ID;
+    const waConfig = await getUserWhatsAppConfig(req.user.id, req.user.email);
+    if (!waConfig.isConnected || !waConfig.wabaId) {
+      return res.status(400).json({ error: 'Please connect your WhatsApp Business Account (WABA) before syncing templates.' });
+    }
+    const wabaId = waConfig.wabaId;
     const metaUrl = `https://graph.facebook.com/v20.0/${wabaId}/message_templates?limit=100`;
 
     const metaRes = await axios.get(metaUrl, {
-      headers: { Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}` }
+      headers: { Authorization: `Bearer ${waConfig.accessToken}` }
     });
 
     const metaTemplates = metaRes.data?.data || [];
@@ -376,12 +446,13 @@ router.post('/templates/sync', auth, async (req, res) => {
 router.delete('/templates/:name', auth, async (req, res) => {
   const templateName = req.params.name;
   try {
-    const wabaId = process.env.WHATSAPP_WABA_ID;
+    const waConfig = await getUserWhatsAppConfig(req.user.id, req.user.email);
+    const wabaId = waConfig.wabaId || process.env.WHATSAPP_WABA_ID;
     const metaUrl = `https://graph.facebook.com/v20.0/${wabaId}/message_templates?name=${templateName}`;
 
     try {
       await axios.delete(metaUrl, {
-        headers: { Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}` }
+        headers: { Authorization: `Bearer ${waConfig.accessToken || process.env.WHATSAPP_ACCESS_TOKEN}` }
       });
     } catch (metaErr) {
       console.warn('Meta delete warning:', metaErr.response?.data || metaErr.message);
@@ -445,17 +516,43 @@ router.post('/webhook', async (req, res) => {
         if (value.messages && value.messages[0]) {
           const message = value.messages[0];
           const toNumber = value.metadata ? value.metadata.display_phone_number : 'unknown';
+          const metaPhoneId = value.metadata ? value.metadata.phone_number_id : null;
 
-          const { data: matchedUser } = await supabaseAdmin
-            .from('users')
-            .select('id')
-            .limit(1)
-            .single();
+          // Find the exact user who owns this phone_number_id
+          let matchedUser = null;
+          if (metaPhoneId) {
+            const { data: userByPhone } = await supabaseAdmin
+              .from('users')
+              .select('id, whatsapp_phone_number_id, whatsapp_waba_id')
+              .eq('whatsapp_phone_number_id', metaPhoneId)
+              .maybeSingle();
+            matchedUser = userByPhone;
+          }
+
+          // Fallback to admin if metaPhoneId matches default ENV number
+          if (!matchedUser && metaPhoneId === process.env.WHATSAPP_PHONE_NUMBER_ID) {
+            const { data: adminUser } = await supabaseAdmin
+              .from('users')
+              .select('id, whatsapp_phone_number_id, whatsapp_waba_id')
+              .eq('email', 'sauravrai8757@gmail.com')
+              .maybeSingle();
+            matchedUser = adminUser;
+          }
+
+          // Last fallback: first user in DB if still unmatched (for initial setup)
+          if (!matchedUser) {
+            const { data: fallbackUser } = await supabaseAdmin
+              .from('users')
+              .select('id, whatsapp_phone_number_id, whatsapp_waba_id')
+              .limit(1)
+              .maybeSingle();
+            matchedUser = fallbackUser;
+          }
 
           if (matchedUser) {
             await supabaseAdmin.from('messages').insert({
               user_id: matchedUser.id,
-              wa_account_id: process.env.WHATSAPP_WABA_ID,
+              wa_account_id: matchedUser.whatsapp_waba_id || process.env.WHATSAPP_WABA_ID,
               from_number: message.from,
               to_number: toNumber,
               message_type: message.type,
@@ -466,11 +563,10 @@ router.post('/webhook', async (req, res) => {
             });
 
             // Non-blocking trigger for AI Agent Auto-Reply
-            handleIncomingAiReply(matchedUser.id, message).catch((err) => {
+            handleIncomingAiReply(matchedUser.id, message, metaPhoneId).catch((err) => {
               console.error('AI Auto-reply background error:', err);
             });
           }
-
         }
       }
       res.sendStatus(200);

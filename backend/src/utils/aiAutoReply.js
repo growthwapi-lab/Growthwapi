@@ -27,7 +27,7 @@ async function getUserPlan(userId) {
 }
 
 
-const handleIncomingAiReply = async (userId, message) => {
+const handleIncomingAiReply = async (userId, message, phoneId) => {
   try {
     const fromNumber = message.from;
     const messageText = message.text?.body || message.button?.text || message.interactive?.button_reply?.title;
@@ -53,8 +53,8 @@ const handleIncomingAiReply = async (userId, message) => {
     // Check if quota exceeded
     if ((agent.ai_replies_this_month || 0) >= monthlyLimit) {
       const quotaMsg = "Our AI assistant monthly response quota has been reached. A human team member will assist you shortly!";
-      await sendWhatsAppText(fromNumber, quotaMsg);
-      await saveOutboundMessage(userId, fromNumber, quotaMsg, true);
+      await sendWhatsAppText(fromNumber, quotaMsg, phoneId);
+      await saveOutboundMessage(userId, fromNumber, quotaMsg, true, phoneId);
       return;
     }
 
@@ -192,10 +192,10 @@ RULES:
     }
 
     // 6. Send response via Meta WhatsApp API
-    await sendWhatsAppText(fromNumber, aiResponseText);
+    await sendWhatsAppText(fromNumber, aiResponseText, phoneId);
 
     // 7. Save outbound message to DB
-    await saveOutboundMessage(userId, fromNumber, aiResponseText, needsHuman);
+    await saveOutboundMessage(userId, fromNumber, aiResponseText, needsHuman, phoneId);
 
     // 8. Increment monthly reply count
     await supabaseAdmin
@@ -211,10 +211,12 @@ RULES:
   }
 };
 
-const sendWhatsAppText = async (to, text) => {
+const sendWhatsAppText = async (to, text, phoneId) => {
   try {
+    const targetPhoneId = phoneId || process.env.WHATSAPP_PHONE_NUMBER_ID;
+    const waUrl = `https://graph.facebook.com/v18.0/${targetPhoneId}/messages`;
     await axios.post(
-      WA_URL,
+      waUrl,
       {
         messaging_product: 'whatsapp',
         to: to,
@@ -228,12 +230,12 @@ const sendWhatsAppText = async (to, text) => {
   }
 };
 
-const saveOutboundMessage = async (userId, toNumber, text, needsHuman) => {
+const saveOutboundMessage = async (userId, toNumber, text, needsHuman, phoneId) => {
   try {
     await supabaseAdmin.from('messages').insert({
       user_id: userId,
       wa_account_id: process.env.WHATSAPP_WABA_ID,
-      from_number: process.env.WHATSAPP_PHONE_NUMBER_ID,
+      from_number: phoneId || process.env.WHATSAPP_PHONE_NUMBER_ID,
       to_number: toNumber,
       message_type: 'text',
       direction: 'outbound',

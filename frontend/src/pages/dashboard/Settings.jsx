@@ -21,6 +21,7 @@ export default function Settings() {
   const [activePlan, setActivePlan] = useState(null)
   const [passwords, setPasswords] = useState({ current: '', new_: '', confirm: '' })
   const [saving, setSaving] = useState(false)
+  const [savingWa, setSavingWa] = useState(false)
   const [changingPw, setChangingPw] = useState(false)
 
   useEffect(() => {
@@ -40,9 +41,30 @@ export default function Settings() {
           phone: res.data.phone || user?.user_metadata?.phone || '',
           email: res.data.email || user?.email || '',
         })
+        setWa({
+          phone_number_id: res.data.whatsapp_phone_number_id || '',
+          waba_id: res.data.whatsapp_waba_id || '',
+        })
       }
     } catch (err) {
       console.error('Error fetching profile:', err)
+    }
+  }
+
+  const handleWaSave = async (e) => {
+    e.preventDefault()
+    setSavingWa(true)
+    try {
+      await api.put('/api/users/whatsapp-config', {
+        phone_number_id: wa.phone_number_id,
+        waba_id: wa.waba_id,
+      })
+      toast.success('🎉 WhatsApp Business credentials saved successfully!')
+      fetchProfile()
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to save WhatsApp credentials')
+    } finally {
+      setSavingWa(false)
     }
   }
 
@@ -238,19 +260,76 @@ export default function Settings() {
         )}
       </SectionCard>
 
-      {/* WhatsApp Settings & Webhook */}
-      <SectionCard title="WhatsApp Integration" icon={Smartphone} color="text-green-600">
-        <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg mb-4 flex gap-2 text-sm text-blue-700">
-          <Info size={16} className="flex-shrink-0 mt-0.5" />
-          <span>
-            WhatsApp Business onboarding is handled automatically via Meta's Embedded Signup on the main Dashboard.
-          </span>
+      {/* WhatsApp Settings & Credentials */}
+      <SectionCard title="WhatsApp Integration & Credentials" icon={Smartphone} color="text-green-600">
+        <div className="flex items-center justify-between p-3.5 bg-gray-50 border border-gray-200 rounded-lg mb-4">
+          <div>
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Connection Status</span>
+            <span className="font-bold text-sm text-brand-dark flex items-center gap-1.5 mt-0.5">
+              {wa.phone_number_id ? (
+                <>
+                  <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block animate-pulse"></span>
+                  Connected (Phone ID: {wa.phone_number_id})
+                </>
+              ) : (
+                <>
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-400 inline-block"></span>
+                  Not Connected
+                </>
+              )}
+            </span>
+          </div>
+          <Link
+            to="/dashboard"
+            className="text-xs font-semibold text-brand-blue hover:underline bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm"
+          >
+            Connect via Meta Popup →
+          </Link>
         </div>
+
+        <form onSubmit={handleWaSave} className="space-y-4 mb-5">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              WhatsApp Phone Number ID
+            </label>
+            <input
+              type="text"
+              value={wa.phone_number_id}
+              onChange={e => setWa({ ...wa, phone_number_id: e.target.value })}
+              placeholder="e.g. 1313417765190326"
+              className={inputCls}
+            />
+            <p className="text-xs text-gray-500 mt-1">Found in Meta Developer Console → WhatsApp → API Setup</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              WhatsApp Business Account ID (WABA ID)
+            </label>
+            <input
+              type="text"
+              value={wa.waba_id}
+              onChange={e => setWa({ ...wa, waba_id: e.target.value })}
+              placeholder="e.g. 2201481664133864"
+              className={inputCls}
+            />
+            <p className="text-xs text-gray-500 mt-1">Found in Meta Business Manager → WhatsApp Accounts</p>
+          </div>
+
+          <button
+            type="submit"
+            disabled={savingWa}
+            className="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 transition-colors disabled:opacity-50 text-sm shadow-sm"
+          >
+            {savingWa ? 'Saving...' : 'Save WhatsApp IDs'}
+          </button>
+        </form>
+
         <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 text-sm text-gray-600 space-y-2">
           <p className="font-semibold text-brand-dark">Webhook Configuration</p>
           <p>Set your Meta app's Webhook callback URL to:</p>
-          <code className="block bg-white border border-gray-200 px-3 py-2 rounded text-brand-blue font-mono text-xs">
-            https://your-domain.com/api/whatsapp/webhook
+          <code className="block bg-white border border-gray-200 px-3 py-2 rounded text-brand-blue font-mono text-xs select-all">
+            https://growthwapi-backend.onrender.com/api/whatsapp/webhook
           </code>
           <p className="text-xs text-gray-500">
             Use <code className="font-mono bg-white px-1 rounded border">growthwapi_secure_2026</code> as the Verify Token in Meta App Settings.

@@ -1,4 +1,5 @@
 const express = require('express');
+const axios = require('axios');
 const auth = require('../middleware/auth');
 const { supabaseAdmin } = require('../config/supabase');
 const {
@@ -133,10 +134,24 @@ router.put('/whatsapp-config', auth, async (req, res) => {
   try {
     await getOrCreateUser(req.user);
 
-    // Build update object — null clears the value (for disconnect)
+    // Auto-fetch the actual display phone number from Meta Graph API if phone_number_id is provided
+    let displayPhone = null;
+    if (phone_number_id && phone_number_id.trim()) {
+      try {
+        const metaRes = await axios.get(`https://graph.facebook.com/v18.0/${phone_number_id.trim()}`, {
+          headers: { Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}` }
+        });
+        displayPhone = metaRes.data?.display_phone_number || null;
+      } catch (err) {
+        console.warn('Could not auto-fetch display phone number from Meta:', err.response?.data?.error?.message || err.message);
+      }
+    }
+
+    // Build update object - null clears the value (for disconnect)
     const updatePayload = {
       whatsapp_phone_number_id: (phone_number_id && phone_number_id.trim()) ? phone_number_id.trim() : null,
       whatsapp_waba_id: (waba_id && waba_id.trim()) ? waba_id.trim() : null,
+      ...(displayPhone !== null ? { whatsapp_display_phone: displayPhone } : (isDisconnect ? { whatsapp_display_phone: null } : {})),
       updated_at: new Date().toISOString()
     };
 

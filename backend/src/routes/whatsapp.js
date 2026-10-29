@@ -105,6 +105,135 @@ router.post('/send', auth, trialCheck, async (req, res) => {
   }
 });
 
+// Send media file (photo, document, audio, video) from Inbox
+router.post('/send-media', auth, trialCheck, async (req, res) => {
+  const { to, base64, filename, mimeType, caption } = req.body;
+  const user = req.user;
+
+  if (!to || !base64) {
+    return res.status(400).json({ error: 'Recipient number and media file are required.' });
+  }
+
+  try {
+    const waConfig = await getUserWhatsAppConfig(user.id, user.email);
+    if (!waConfig.isConnected) {
+      return res.status(400).json({
+        error: 'Please connect your WhatsApp Business account first from Dashboard or Settings.'
+      });
+    }
+
+    // 1. Convert base64 data to buffer
+    const base64Data = base64.includes('base64,') ? base64.split('base64,')[1] : base64;
+    const buffer = Buffer.from(base64Data, 'base64');
+    const safeMime = mimeType || 'image/jpeg';
+    const safeFilename = filename || (safeMime.startsWith('image/') ? 'photo.jpg' : 'file.pdf');
+
+    // 2. Upload to Meta Cloud API Media endpoint
+    const formData = new FormData();
+    formData.append('messaging_product', 'whatsapp');
+    formData.append('file', new Blob([buffer], { type: safeMime }), safeFilename);
+    formData.append('type', safeMime);
+
+    const uploadRes = await axios.post(
+      `https://graph.facebook.com/v18.0/${waConfig.phoneId}/media`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${waConfig.accessToken}`,
+        }
+      }
+    );
+
+    const mediaId = uploadRes.data?.id;
+    if (!mediaId) {
+      throw new Error('Failed to obtain media ID from Meta.');
+    }
+
+    // 3. Determine WhatsApp media type
+    let waType = 'document';
+    if (safeMime.startsWith('image/')) waType = 'image';
+    else if (safeMime.startsWith('audio/')) waType = 'audio';
+    else if (safeMime.startsWith('video/')) waType = 'video';
+
+    const mediaPayload = {
+      messaging_product: 'whatsapp',
+      to: to.trim().replace(/[\+\s\-]/g, ''),
+      type: waType,
+      [waType]: {
+        id: mediaId,
+        ...(caption ? { caption } : {}),
+        ...(waType === 'document' ? { filename: safeFilename } : {})
+      }
+    };
+
+    // 4. Send message with uploaded media ID
+    const sendRes = await axios.post(
+      `https://graph.facebook.com/v18.0/${waConfig.phoneId}/messages`,
+      mediaPayload,
+      {
+        headers: {
+          Authorization: `Bearer ${waConfig.accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    const waMsgId = sendRes.data?.messages?.[0]?.id || null;
+
+    // 5. Store in Supabase
+    const { data: insertedMsg } = await supabaseAdmin.from('messages').insert({
+      user_id: user.id,
+      wa_account_id: waConfig.wabaId,
+      from_number: waConfig.phoneId,
+      to_number: to,
+      message_type: waType,
+      direction: 'outbound',
+      content: mediaPayload,
+      billing_category: 'utility',
+      status: 'sent',
+      whatsapp_message_id: waMsgId,
+      sent_at: new Date().toISOString()
+    }).select().maybeSingle();
+
+    res.json({ success: true, mediaId, message: insertedMsg });
+  } catch (error) {
+    console.error('Send media error:', error.response?.data || error.message);
+    res.status(500).json({ error: error.response?.data?.error?.message || error.message || 'Failed to send media file.' });
+  }
+});
+
+// Proxy media from Meta (photos, audio, documents received in WhatsApp)
+router.get('/media-proxy/:mediaId', async (req, res) => {
+  try {
+    const { mediaId } = req.params;
+    if (!mediaId) return res.status(400).send('Missing mediaId');
+
+    // 1. Get binary URL from Meta Graph API
+    const metaRes = await axios.get(`https://graph.facebook.com/v18.0/${mediaId}`, {
+      headers: { Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}` }
+    });
+    const mediaUrl = metaRes.data?.url;
+    const mimeType = metaRes.data?.mime_type || 'image/jpeg';
+
+    if (!mediaUrl) {
+      return res.status(404).send('Media URL not found on Meta');
+    }
+
+    // 2. Fetch the binary stream
+    const fileRes = await axios.get(mediaUrl, {
+      headers: { Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}` },
+      responseType: 'arraybuffer'
+    });
+
+    res.set('Content-Type', mimeType);
+    res.set('Cache-Control', 'public, max-age=86400');
+    res.send(Buffer.from(fileRes.data));
+  } catch (err) {
+    console.error('Media proxy error:', err.response?.data || err.message);
+    res.status(500).send('Failed to fetch media file');
+  }
+});
+
 // Broadcast (Supports free-text and template broadcasts)
 router.post('/broadcast', auth, trialCheck, async (req, res) => {
   const { numbers, type, template, text, name, useTemplate, templateName, languageCode, components } = req.body;

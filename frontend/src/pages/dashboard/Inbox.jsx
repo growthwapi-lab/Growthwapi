@@ -7,7 +7,12 @@ import {
   CheckCircle,
   Check,
   CheckCheck,
-  Clock
+  Clock,
+  Paperclip,
+  Image as ImageIcon,
+  FileText,
+  X,
+  Download
 } from 'lucide-react'
 import api from '../../lib/api'
 import toast from 'react-hot-toast'
@@ -27,7 +32,6 @@ function StatusTick({ status }) {
   if (s === 'failed') {
     return <AlertCircle className="w-3.5 h-3.5 text-red-500 inline shrink-0" title="Failed to deliver" />
   }
-  // Pending / sending
   return <Clock className="w-3.5 h-3.5 text-gray-400 inline shrink-0 animate-pulse" title="Sending..." />
 }
 
@@ -36,19 +40,19 @@ export default function Inbox() {
   const [conversations, setConversations] = useState([])
   const [activeConv, setActiveConv] = useState(null)
   const [newMessage, setNewMessage] = useState('')
+  const [selectedFile, setSelectedFile] = useState(null) // { file, base64, previewUrl, name, type }
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [resolving, setResolving] = useState(false)
 
   const activeConvIdRef = useRef(null)
   const messagesEndRef = useRef(null)
+  const fileInputRef = useRef(null)
 
-  // Keep activeConvIdRef in sync
   useEffect(() => {
     activeConvIdRef.current = activeConv?.id || null
   }, [activeConv])
 
-  // Scroll to bottom on new message
   const scrollToBottom = (smooth = true) => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' })
@@ -58,7 +62,7 @@ export default function Inbox() {
   useEffect(() => {
     fetchMessages(false)
     const interval = setInterval(() => {
-      fetchMessages(true) // silent refresh without any screen reload
+      fetchMessages(true)
     }, 4000)
     return () => clearInterval(interval)
   }, [])
@@ -81,6 +85,10 @@ export default function Inbox() {
       msgList.forEach((m) => {
         const phone = m.direction === 'outbound' ? m.to_number : m.from_number
         const getSnippet = () => {
+          if (m.content?.image) return '📷 Photo'
+          if (m.content?.document) return '📄 Document'
+          if (m.content?.audio) return '🎵 Voice / Audio'
+          if (m.content?.video) return '🎥 Video'
           if (typeof m.content === 'string') return m.content
           if (m.content?.text?.body) return m.content.text.body
           if (m.content?.body) return m.content.body
@@ -125,13 +133,42 @@ export default function Inbox() {
     }
   }
 
-  // Instant smooth send (WhatsApp style: zero screen flicker, immediate optimistic bubble)
+  // Handle file selection from local device
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Limit to 15MB
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('File size must be under 15MB.')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      setSelectedFile({
+        file,
+        base64: reader.result,
+        previewUrl: file.type.startsWith('image/') ? reader.result : null,
+        name: file.name,
+        type: file.type,
+      })
+    }
+    reader.readAsDataURL(file)
+  }
+
+  // Instant smooth send (text and/or media)
   const handleSend = async (e) => {
     e.preventDefault()
-    if (!newMessage.trim() || !activeConv || sending) return
+    if ((!newMessage.trim() && !selectedFile) || !activeConv || sending) return
 
     const textToSend = newMessage.trim()
-    setNewMessage('') // Clear input instantly like WhatsApp
+    const fileToSend = selectedFile
+
+    // Clear inputs immediately
+    setNewMessage('')
+    setSelectedFile(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
 
     // 1. Optimistic local message
     const tempId = 'temp_' + Date.now()
@@ -140,37 +177,55 @@ export default function Inbox() {
       user_id: activeConv.messages?.[0]?.user_id,
       from_number: 'me',
       to_number: activeConv.phone,
-      message_type: 'text',
+      message_type: fileToSend ? (fileToSend.type.startsWith('image/') ? 'image' : 'document') : 'text',
       direction: 'outbound',
-      content: { text: { body: textToSend } },
+      content: fileToSend
+        ? {
+            [fileToSend.type.startsWith('image/') ? 'image' : 'document']: {
+              caption: textToSend,
+              filename: fileToSend.name,
+              previewUrl: fileToSend.previewUrl,
+            }
+          }
+        : { text: { body: textToSend } },
       status: 'pending',
       sent_at: new Date().toISOString()
     }
 
-    // Update active conversation immediately
     setActiveConv((prev) => {
       if (!prev) return prev
       return {
         ...prev,
-        lastMessage: textToSend,
+        lastMessage: fileToSend ? (fileToSend.type.startsWith('image/') ? '📷 Photo' : '📄 File') : textToSend,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         messages: [optimisticMsg, ...(prev.messages || [])]
       }
     })
 
-    // Scroll to bottom immediately
     setTimeout(() => scrollToBottom(true), 50)
-
     setSending(true)
-    try {
-      const res = await api.post('/api/whatsapp/send', {
-        to: activeConv.phone,
-        type: 'text',
-        text: { body: textToSend },
-        messageCategory: 'utility',
-      })
 
-      // Update optimistic message status to 'sent'
+    try {
+      let res
+      if (fileToSend) {
+        // Send Media via API
+        res = await api.post('/api/whatsapp/send-media', {
+          to: activeConv.phone,
+          base64: fileToSend.base64,
+          filename: fileToSend.name,
+          mimeType: fileToSend.type,
+          caption: textToSend || '',
+        })
+      } else {
+        // Send pure text
+        res = await api.post('/api/whatsapp/send', {
+          to: activeConv.phone,
+          type: 'text',
+          text: { body: textToSend },
+          messageCategory: 'utility',
+        })
+      }
+
       const realMsg = res.data?.message
       setActiveConv((prev) => {
         if (!prev) return prev
@@ -182,7 +237,6 @@ export default function Inbox() {
         }
       })
     } catch (err) {
-      // Mark as failed
       setActiveConv((prev) => {
         if (!prev) return prev
         return {
@@ -192,10 +246,9 @@ export default function Inbox() {
           )
         }
       })
-      toast.error(err.response?.data?.error || 'Failed to send message')
+      toast.error(err.response?.data?.error || 'Failed to send')
     } finally {
       setSending(false)
-      // Background silent sync
       fetchMessages(true)
     }
   }
@@ -214,6 +267,122 @@ export default function Inbox() {
     } finally {
       setResolving(false)
     }
+  }
+
+  // Render message body (handles Image, Document, Audio, Video, Template, Text)
+  const renderMessageContent = (m) => {
+    const content = m.content || {}
+    const baseURL = api.defaults.baseURL || ''
+
+    // 1. Image
+    const imgObj = content.image
+    if (imgObj) {
+      const mediaId = imgObj.id
+      const imgSrc = imgObj.previewUrl || (mediaId ? `${baseURL}/api/whatsapp/media-proxy/${mediaId}` : imgObj.url || imgObj.link)
+      const caption = imgObj.caption || ''
+      return (
+        <div className="space-y-1.5">
+          {imgSrc && (
+            <img
+              src={imgSrc}
+              alt="WhatsApp Photo"
+              className="rounded-xl max-h-72 w-auto object-cover border border-black/5 hover:opacity-95 cursor-pointer shadow-xs"
+              onClick={() => window.open(imgSrc, '_blank')}
+              loading="lazy"
+            />
+          )}
+          {caption && <p className="text-sm leading-relaxed">{caption}</p>}
+        </div>
+      )
+    }
+
+    // 2. Document / PDF
+    const docObj = content.document
+    if (docObj) {
+      const docId = docObj.id
+      const docSrc = docId ? `${baseURL}/api/whatsapp/media-proxy/${docId}` : docObj.url || docObj.link
+      const filename = docObj.filename || 'Document.pdf'
+      const caption = docObj.caption || ''
+      return (
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-3 p-2.5 bg-black/5 rounded-xl border border-black/5 max-w-xs">
+            <div className="p-2 bg-red-100 text-red-600 rounded-lg">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div className="flex-1 truncate">
+              <p className="text-xs font-semibold text-gray-800 truncate">{filename}</p>
+              <p className="text-[10px] text-gray-500">Document</p>
+            </div>
+            {docSrc && (
+              <a
+                href={docSrc}
+                target="_blank"
+                rel="noreferrer"
+                download={filename}
+                className="p-1.5 text-brand-blue hover:bg-brand-blue/10 rounded-lg transition-colors"
+                title="Download file"
+              >
+                <Download className="w-4 h-4" />
+              </a>
+            )}
+          </div>
+          {caption && <p className="text-sm leading-relaxed">{caption}</p>}
+        </div>
+      )
+    }
+
+    // 3. Audio / Voice Note
+    const audioObj = content.audio
+    if (audioObj) {
+      const audioId = audioObj.id
+      const audioSrc = audioId ? `${baseURL}/api/whatsapp/media-proxy/${audioId}` : audioObj.url
+      return (
+        <div className="p-1">
+          <audio controls src={audioSrc} className="w-64 h-9" />
+        </div>
+      )
+    }
+
+    // 4. Video
+    const videoObj = content.video
+    if (videoObj) {
+      const videoId = videoObj.id
+      const videoSrc = videoId ? `${baseURL}/api/whatsapp/media-proxy/${videoId}` : videoObj.url
+      return (
+        <div className="space-y-1.5">
+          <video controls src={videoSrc} className="rounded-xl max-h-72 w-auto shadow-xs" />
+          {videoObj.caption && <p className="text-sm">{videoObj.caption}</p>}
+        </div>
+      )
+    }
+
+    // 5. Template Message
+    if (content.template?.name) {
+      return (
+        <div className="p-1 font-mono text-xs text-blue-900 bg-blue-50/60 rounded-lg border border-blue-100">
+          📋 <strong>Template Sent:</strong> {content.template.name}
+        </div>
+      )
+    }
+
+    // 6. Interactive Button Reply
+    if (content.type === 'interactive' && content.interactive?.button_reply?.title) {
+      return <p className="font-semibold text-brand-blue">🔘 {content.interactive.button_reply.title}</p>
+    }
+
+    // 7. Regular Text or fallback
+    let bodyText = ''
+    if (typeof content === 'string') {
+      bodyText = content
+    } else if (content?.text?.body) {
+      bodyText = content.text.body
+    } else if (content?.body) {
+      bodyText = content.body
+    } else {
+      bodyText = content?.text?.body || JSON.stringify(content)
+    }
+
+    return <p className="whitespace-pre-wrap leading-relaxed">{bodyText}</p>
   }
 
   return (
@@ -304,20 +473,6 @@ export default function Inbox() {
                 .reverse()
                 .map((m, idx) => {
                   const isOutbound = m.direction === 'outbound'
-                  let bodyText = ''
-                  if (typeof m.content === 'string') {
-                    bodyText = m.content
-                  } else if (m.content?.text?.body) {
-                    bodyText = m.content.text.body
-                  } else if (m.content?.body) {
-                    bodyText = m.content.body
-                  } else if (m.content?.template?.name) {
-                    bodyText = `📋 Template: ${m.content.template.name}`
-                  } else if (m.content?.type === 'interactive' && m.content?.interactive?.button_reply?.title) {
-                    bodyText = m.content.interactive.button_reply.title
-                  } else {
-                    bodyText = typeof m.content === 'object' ? (m.content?.text?.body || JSON.stringify(m.content)) : String(m.content)
-                  }
 
                   return (
                     <div
@@ -328,9 +483,10 @@ export default function Inbox() {
                           : 'self-start bg-white text-gray-900 rounded-tl-none border border-gray-200'
                       }`}
                     >
-                      <p className="whitespace-pre-wrap leading-relaxed">{bodyText}</p>
+                      {/* Rich Content: Image / Document / Text */}
+                      {renderMessageContent(m)}
 
-                      <div className="flex items-center justify-end gap-1.5 mt-1">
+                      <div className="flex items-center justify-end gap-1.5 mt-1.5">
                         {m.needs_human && (
                           <span className="text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-100 mr-1">
                             Needs Attention
@@ -339,7 +495,6 @@ export default function Inbox() {
                         <span className="text-[11px] text-gray-500 font-mono">
                           {new Date(m.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
-                        {/* Status Ticks for Outbound Messages */}
                         {isOutbound && <StatusTick status={m.status} />}
                       </div>
                     </div>
@@ -348,21 +503,67 @@ export default function Inbox() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Send Reply Form (WhatsApp Web Bar) */}
+            {/* Selected File Preview Bar (If attached) */}
+            {selectedFile && (
+              <div className="px-4 py-2 bg-gray-100 border-t border-gray-200 flex items-center justify-between text-xs animate-in fade-in duration-150">
+                <div className="flex items-center gap-2 truncate">
+                  {selectedFile.previewUrl ? (
+                    <img src={selectedFile.previewUrl} alt="preview" className="w-8 h-8 rounded object-cover border" />
+                  ) : (
+                    <FileText className="w-5 h-5 text-brand-blue shrink-0" />
+                  )}
+                  <span className="font-semibold text-gray-800 truncate">{selectedFile.name}</span>
+                  <span className="text-gray-400">({(selectedFile.file.size / 1024).toFixed(1)} KB)</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedFile(null)
+                    if (fileInputRef.current) fileInputRef.current.value = ''
+                  }}
+                  className="p-1 text-gray-500 hover:text-red-500 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* Send Reply Form (WhatsApp Web Bar with Attachment) */}
             <div className="p-3.5 border-t border-gray-200 bg-white">
               <form onSubmit={handleSend} className="flex items-center gap-2">
+                {/* Hidden File Input */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileSelect}
+                  accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv,text/plain"
+                  className="hidden"
+                />
+
+                {/* Attachment Button */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="p-2 text-gray-500 hover:text-brand-blue hover:bg-gray-100 rounded-xl transition-all shrink-0"
+                  title="Attach Photo or Document"
+                >
+                  <Paperclip size={20} />
+                </button>
+
                 <input
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type a message..."
+                  placeholder={selectedFile ? 'Add a caption...' : 'Type a message...'}
                   className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-blue outline-none text-sm transition-all"
                   autoFocus
                 />
+
                 <button
                   type="submit"
-                  disabled={!newMessage.trim()}
+                  disabled={!newMessage.trim() && !selectedFile}
                   className="bg-brand-blue hover:bg-blue-900 text-white p-2.5 rounded-xl transition-all shadow-xs disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center shrink-0"
+                  title="Send"
                 >
                   <Send size={18} />
                 </button>

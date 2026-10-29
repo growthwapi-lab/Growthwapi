@@ -81,9 +81,10 @@ router.post('/send', auth, trialCheck, async (req, res) => {
     }
 
     const response = await axios.post(waUrl, data, { headers: waHeaders });
+    const waMsgId = response.data?.messages?.[0]?.id || null;
 
-    // Store in DB
-    await supabaseAdmin.from('messages').insert({
+    // Store in DB with Meta Message ID for real-time delivery/read tracking
+    const { data: insertedMsg } = await supabaseAdmin.from('messages').insert({
       user_id: user.id,
       wa_account_id: waConfig.wabaId,
       from_number: waConfig.phoneId,
@@ -93,10 +94,11 @@ router.post('/send', auth, trialCheck, async (req, res) => {
       content: data,
       billing_category: req.body.messageCategory || 'utility',
       status: 'sent',
+      whatsapp_message_id: waMsgId,
       sent_at: new Date().toISOString()
-    });
+    }).select().maybeSingle();
 
-    res.json({ success: true, data: response.data });
+    res.json({ success: true, data: response.data, message: insertedMsg });
   } catch (error) {
     console.error('Send message error:', error.response?.data || error.message);
     res.status(500).json({ error: error.response?.data?.error?.message || 'Failed to send message' });
@@ -510,6 +512,19 @@ router.post('/webhook', async (req, res) => {
               updated_at: new Date().toISOString()
             })
             .or(`meta_template_id.eq.${value.message_template_id},name.eq.${value.message_template_name}`);
+        }
+
+        // Handle Message Delivery & Read Status Updates from Meta (Single tick, Double tick, Blue tick)
+        if (value.statuses && value.statuses[0]) {
+          const statusObj = value.statuses[0];
+          const waMsgId = statusObj.id;
+          const newStatus = statusObj.status; // 'sent', 'delivered', 'read', 'failed'
+          if (waMsgId && ['sent', 'delivered', 'read', 'failed'].includes(newStatus)) {
+            await supabaseAdmin
+              .from('messages')
+              .update({ status: newStatus })
+              .eq('whatsapp_message_id', waMsgId);
+          }
         }
 
         // Handle incoming messages

@@ -667,10 +667,19 @@ router.post('/embedded-signup-callback', auth, async (req, res) => {
   const user = req.user;
 
   try {
-    let finalPhoneId = phone_number_id;
-    let finalWabaId = waba_id;
-    let displayPhoneNumber = '';
+    // 1. Fetch existing user record so we don't accidentally overwrite with null
+    const { data: existingUser } = await supabaseAdmin
+      .from('users')
+      .select('whatsapp_phone_number_id, whatsapp_waba_id, whatsapp_display_phone')
+      .eq('id', user.id)
+      .maybeSingle();
 
+    let finalPhoneId = (phone_number_id && String(phone_number_id).trim()) || existingUser?.whatsapp_phone_number_id || null;
+    let finalWabaId = (waba_id && String(waba_id).trim()) || existingUser?.whatsapp_waba_id || null;
+    let displayPhoneNumber = existingUser?.whatsapp_display_phone || '';
+    let userToken = null;
+
+    // 2. Exchange code for user access token if code was returned
     if (code) {
       try {
         const tokenRes = await axios.get('https://graph.facebook.com/v18.0/oauth/access_token', {
@@ -680,7 +689,7 @@ router.post('/embedded-signup-callback', auth, async (req, res) => {
             code: code,
           }
         });
-        const userToken = tokenRes.data.access_token;
+        userToken = tokenRes.data.access_token;
 
         if (userToken && !finalWabaId) {
           const debugRes = await axios.get('https://graph.facebook.com/v18.0/debug_token', {
@@ -694,10 +703,28 @@ router.post('/embedded-signup-callback', auth, async (req, res) => {
       }
     }
 
-    if (finalPhoneId) {
+    // 3. If we have WABA ID but no phone ID, auto-fetch phone numbers from WABA
+    const tokenToUse = userToken || process.env.WHATSAPP_ACCESS_TOKEN;
+    if (finalWabaId && !finalPhoneId && tokenToUse) {
+      try {
+        const phoneListRes = await axios.get(`https://graph.facebook.com/v18.0/${finalWabaId}/phone_numbers`, {
+          headers: { Authorization: `Bearer ${tokenToUse}` }
+        });
+        const phones = phoneListRes.data?.data || [];
+        if (phones.length > 0) {
+          finalPhoneId = phones[0].id;
+          displayPhoneNumber = phones[0].display_phone_number || '';
+        }
+      } catch (phoneErr) {
+        console.warn('Could not auto-fetch phone numbers from WABA:', phoneErr.response?.data || phoneErr.message);
+      }
+    }
+
+    // 4. If we have phoneId but missing display phone number, fetch display phone
+    if (finalPhoneId && !displayPhoneNumber && tokenToUse) {
       try {
         const phoneRes = await axios.get(`https://graph.facebook.com/v18.0/${finalPhoneId}`, {
-          headers: { Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}` }
+          headers: { Authorization: `Bearer ${tokenToUse}` }
         });
         displayPhoneNumber = phoneRes.data.display_phone_number || '';
       } catch (e) {
@@ -705,7 +732,14 @@ router.post('/embedded-signup-callback', auth, async (req, res) => {
       }
     }
 
-    // Build update payload — whatsapp_display_phone is optional (column may not exist in older DBs)
+    // 5. Ensure at least one valid credential is found before updating
+    if (!finalPhoneId && !finalWabaId) {
+      return res.status(400).json({
+        error: 'Could not retrieve WhatsApp Phone Number ID or WABA ID from Meta. Please enter them manually in Settings.'
+      });
+    }
+
+    // Build update payload
     const updatePayload = {
       whatsapp_phone_number_id: finalPhoneId || null,
       whatsapp_waba_id: finalWabaId || null,

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { MessageSquare, Users, Send, Wallet, CheckCircle, Smartphone, ShieldCheck, ArrowRight } from 'lucide-react'
@@ -15,6 +15,16 @@ export default function DashboardHome() {
   const [loadingStats, setLoadingStats] = useState(true)
 
   const [activePlan, setActivePlan] = useState(null)
+  const signupBufferRef = useRef({})
+  const signupTimeoutRef = useRef(null)
+
+  const triggerSignupSubmit = (partialData) => {
+    signupBufferRef.current = { ...signupBufferRef.current, ...partialData }
+    if (signupTimeoutRef.current) clearTimeout(signupTimeoutRef.current)
+    signupTimeoutRef.current = setTimeout(() => {
+      handleSignupComplete(signupBufferRef.current)
+    }, 300)
+  }
 
   useEffect(() => {
     fetchProfile()
@@ -34,7 +44,7 @@ export default function DashboardHome() {
         if (data.type === 'WA_EMBEDDED_SIGNUP') {
           if (data.event === 'FINISH') {
             const { phone_number_id, waba_id } = data.data || {};
-            handleSignupComplete({ phone_number_id, waba_id });
+            triggerSignupSubmit({ phone_number_id, waba_id });
           } else if (data.event === 'CANCEL') {
             toast.error('WhatsApp connection was not completed. Please try again.');
             setConnecting(false);
@@ -49,6 +59,7 @@ export default function DashboardHome() {
     return () => {
       window.removeEventListener('message', handleMessageEvent);
       window.removeEventListener('planUpdated', handlePlanUpdate);
+      if (signupTimeoutRef.current) clearTimeout(signupTimeoutRef.current);
     };
   }, [])
 
@@ -133,7 +144,7 @@ export default function DashboardHome() {
       function (response) {
         if (response.authResponse) {
           const code = response.authResponse.code;
-          handleSignupComplete({ code });
+          triggerSignupSubmit({ code });
         } else {
           toast.error('WhatsApp connection was not completed. Please try again.');
           setConnecting(false);

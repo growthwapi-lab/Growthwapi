@@ -13,11 +13,15 @@ export default function Inbox() {
   const [resolving, setResolving] = useState(false)
 
   useEffect(() => {
-    fetchMessages()
+    fetchMessages(false)
+    const interval = setInterval(() => {
+      fetchMessages(true)
+    }, 4000)
+    return () => clearInterval(interval)
   }, [])
 
-  const fetchMessages = async () => {
-    setLoading(true)
+  const fetchMessages = async (isSilent = false) => {
+    if (!isSilent) setLoading(true)
     try {
       const res = await api.get('/api/whatsapp/messages')
       const msgList = res.data || []
@@ -27,12 +31,20 @@ export default function Inbox() {
       const grouped = {}
       msgList.forEach((m) => {
         const phone = m.direction === 'outbound' ? m.to_number : m.from_number
+        const getSnippet = () => {
+          if (typeof m.content === 'string') return m.content
+          if (m.content?.text?.body) return m.content.text.body
+          if (m.content?.body) return m.content.body
+          if (m.content?.template?.name) return `📋 ${m.content.template.name}`
+          return 'Message'
+        }
+
         if (!grouped[phone]) {
           grouped[phone] = {
             id: phone,
             phone: phone,
             name: phone,
-            lastMessage: typeof m.content === 'string' ? m.content : (m.content?.text?.body || m.content?.body || 'Message'),
+            lastMessage: getSnippet(),
             time: new Date(m.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             sent_at: m.sent_at,
             needsHuman: false,
@@ -59,7 +71,7 @@ export default function Inbox() {
     } catch (err) {
       console.error('Error fetching messages:', err)
     } finally {
-      setLoading(false)
+      if (!isSilent) setLoading(false)
     }
   }
 
@@ -197,10 +209,20 @@ export default function Inbox() {
                 .reverse()
                 .map((m, idx) => {
                   const isOutbound = m.direction === 'outbound'
-                  const bodyText =
-                    typeof m.content === 'string'
-                      ? m.content
-                      : m.content?.text?.body || m.content?.body || JSON.stringify(m.content)
+                  let bodyText = ''
+                  if (typeof m.content === 'string') {
+                    bodyText = m.content
+                  } else if (m.content?.text?.body) {
+                    bodyText = m.content.text.body
+                  } else if (m.content?.body) {
+                    bodyText = m.content.body
+                  } else if (m.content?.template?.name) {
+                    bodyText = `📋 Template: ${m.content.template.name}`
+                  } else if (m.content?.type === 'interactive' && m.content?.interactive?.button_reply?.title) {
+                    bodyText = m.content.interactive.button_reply.title
+                  } else {
+                    bodyText = typeof m.content === 'object' ? (m.content?.text?.body || JSON.stringify(m.content)) : String(m.content)
+                  }
 
                   return (
                     <div

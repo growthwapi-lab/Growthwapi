@@ -780,6 +780,40 @@ router.patch('/messages/:id/resolve', auth, async (req, res) => {
   }
 });
 
+// DELETE single message (text, photo, audio, video, document)
+router.delete('/messages/:id', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { error } = await supabaseAdmin
+      .from('messages')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', req.user.id);
+
+    if (error) throw error;
+    res.json({ success: true, message: 'Message deleted successfully.' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE entire conversation with a contact
+router.delete('/conversations/:phone', auth, async (req, res) => {
+  try {
+    const { phone } = req.params;
+    const { error } = await supabaseAdmin
+      .from('messages')
+      .delete()
+      .eq('user_id', req.user.id)
+      .or(`from_number.eq.${phone},to_number.eq.${phone}`);
+
+    if (error) throw error;
+    res.json({ success: true, message: 'Conversation deleted successfully.' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 // GET analytics summary
 router.get('/analytics', auth, async (req, res) => {

@@ -12,7 +12,8 @@ import {
   Image as ImageIcon,
   FileText,
   X,
-  Download
+  Download,
+  Trash2
 } from 'lucide-react'
 import api from '../../lib/api'
 import toast from 'react-hot-toast'
@@ -269,6 +270,47 @@ export default function Inbox() {
     }
   }
 
+  // Delete a single message (text, photo, audio, video, document)
+  const handleDeleteMessage = async (msgId) => {
+    if (!msgId || String(msgId).startsWith('temp_')) return
+    if (!window.confirm('Are you sure you want to delete this message?')) return
+
+    setActiveConv((prev) => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        messages: prev.messages.filter((m) => m.id !== msgId),
+      }
+    })
+
+    try {
+      await api.delete(`/api/whatsapp/messages/${msgId}`)
+      toast.success('Message deleted')
+    } catch (err) {
+      toast.error('Failed to delete message')
+    } finally {
+      fetchMessages(true)
+    }
+  }
+
+  // Delete entire conversation
+  const handleDeleteConversation = async (phone) => {
+    if (!phone) return
+    if (!window.confirm(`Are you sure you want to delete all messages with ${phone}? This cannot be undone.`)) return
+
+    setConversations((prev) => prev.filter((c) => c.phone !== phone))
+    setActiveConv(null)
+
+    try {
+      await api.delete(`/api/whatsapp/conversations/${phone}`)
+      toast.success('Conversation deleted')
+    } catch (err) {
+      toast.error('Failed to delete conversation')
+    } finally {
+      fetchMessages(true)
+    }
+  }
+
   // Render message body (handles Image, Document, Audio, Video, Template, Text)
   const renderMessageContent = (m) => {
     const content = m.content || {}
@@ -454,16 +496,25 @@ export default function Inbox() {
                 </div>
               </div>
 
-              {activeConv.needsHuman && (
+              <div className="flex items-center gap-2">
+                {activeConv.needsHuman && (
+                  <button
+                    onClick={handleResolveHumanHandOff}
+                    disabled={resolving}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white font-semibold text-xs rounded-lg hover:bg-emerald-700 transition-colors shadow-xs disabled:opacity-50"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    Mark as Resolved
+                  </button>
+                )}
                 <button
-                  onClick={handleResolveHumanHandOff}
-                  disabled={resolving}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white font-semibold text-xs rounded-lg hover:bg-emerald-700 transition-colors shadow-xs disabled:opacity-50"
+                  onClick={() => handleDeleteConversation(activeConv.phone)}
+                  className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Delete Conversation"
                 >
-                  <CheckCircle className="w-4 h-4" />
-                  Mark as Resolved
+                  <Trash2 className="w-4 h-4" />
                 </button>
-              )}
+              </div>
             </div>
 
             {/* Chat Thread */}
@@ -477,7 +528,7 @@ export default function Inbox() {
                   return (
                     <div
                       key={m.id || idx}
-                      className={`max-w-[75%] p-3 rounded-2xl text-sm relative shadow-xs ${
+                      className={`group max-w-[75%] p-3 rounded-2xl text-sm relative shadow-xs transition-all ${
                         isOutbound
                           ? 'self-end bg-[#d9fdd3] text-gray-900 rounded-tr-none border border-emerald-100'
                           : 'self-start bg-white text-gray-900 rounded-tl-none border border-gray-200'
@@ -487,6 +538,16 @@ export default function Inbox() {
                       {renderMessageContent(m)}
 
                       <div className="flex items-center justify-end gap-1.5 mt-1.5">
+                        {/* Hover Delete Button for this single message */}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteMessage(m.id)}
+                          className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-red-600 rounded transition-opacity"
+                          title="Delete message"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+
                         {m.needs_human && (
                           <span className="text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-100 mr-1">
                             Needs Attention

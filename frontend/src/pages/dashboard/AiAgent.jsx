@@ -18,6 +18,9 @@ import {
   DollarSign,
   PlusCircle,
   BookOpen,
+  MessageSquare,
+  Send,
+  X,
 } from 'lucide-react';
 
 export default function AiAgent() {
@@ -51,6 +54,37 @@ export default function AiAgent() {
   const [extraKnowledgeText, setExtraKnowledgeText] = useState('');
   const [extraKnowledgeLabel, setExtraKnowledgeLabel] = useState('Custom FAQ / Policy');
   const [addingKnowledge, setAddingKnowledge] = useState(false);
+
+  // Test Chat Simulator state
+  const [testChatOpen, setTestChatOpen] = useState(false);
+  const [testChatMessages, setTestChatMessages] = useState([
+    { sender: 'bot', text: 'Hello! I am your AI Assistant. Ask me anything to test my responses.' }
+  ]);
+  const [testInput, setTestInput] = useState('');
+  const [testSending, setTestSending] = useState(false);
+
+  const handleSendTestMessage = async (e) => {
+    e.preventDefault();
+    if (!testInput.trim() || testSending || !agent) return;
+    const userMsg = testInput.trim();
+    setTestInput('');
+    setTestChatMessages((prev) => [...prev, { sender: 'user', text: userMsg }]);
+    setTestSending(true);
+    try {
+      const res = await api.post(`/api/ai-agent/${agent.id}/test-chat`, { message: userMsg });
+      setTestChatMessages((prev) => [
+        ...prev,
+        { sender: 'bot', text: res.data.reply, needs_human: res.data.needs_human },
+      ]);
+    } catch (err) {
+      setTestChatMessages((prev) => [
+        ...prev,
+        { sender: 'bot', text: err.response?.data?.error || 'Failed to get AI response. Check your OpenAI API key or server logs.' },
+      ]);
+    } finally {
+      setTestSending(false);
+    }
+  };
 
   // Fetch Agent data from backend
   const fetchAgentData = async () => {
@@ -289,6 +323,14 @@ export default function AiAgent() {
             >
               <Power className="w-4 h-4" />
               {agent.status === 'active' ? 'Active (Replying 24/7)' : 'Paused'}
+            </button>
+
+            <button
+              onClick={() => setTestChatOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-orange to-orange-600 text-white text-sm font-semibold rounded-xl hover:opacity-95 shadow-xs transition-all"
+            >
+              <MessageSquare className="w-4 h-4" />
+              Test Chat
             </button>
 
             {agent.website_url && !agent.website_url.includes('Custom') && (
@@ -635,6 +677,85 @@ export default function AiAgent() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* TEST CHAT SIMULATOR MODAL */}
+      {testChatOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl flex flex-col h-[580px] overflow-hidden border border-gray-100">
+            {/* Header */}
+            <div className="p-4 bg-gradient-to-r from-brand-orange to-orange-600 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
+                  <Bot className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm leading-tight">{agent?.name || 'AI Assistant'}</h3>
+                  <p className="text-xs text-orange-100">Simulate WhatsApp Customer Chat</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setTestChatOpen(false)}
+                className="p-1.5 hover:bg-white/20 rounded-lg transition-colors text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Messages Body */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+              {testChatMessages.map((msg, i) => (
+                <div
+                  key={i}
+                  className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${
+                      msg.sender === 'user'
+                        ? 'bg-brand-orange text-white rounded-br-none shadow-xs'
+                        : 'bg-white text-gray-800 border border-gray-200 rounded-bl-none shadow-xs'
+                    }`}
+                  >
+                    <p className="whitespace-pre-wrap">{msg.text}</p>
+                    {msg.needs_human && (
+                      <span className="inline-block mt-1 text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                        ⚠️ Flagged for human support
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {testSending && (
+                <div className="flex justify-start">
+                  <div className="bg-white text-gray-500 border border-gray-200 rounded-2xl px-4 py-2 text-xs flex items-center gap-2 shadow-xs">
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-brand-orange" />
+                    AI is thinking...
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Input Footer */}
+            <form onSubmit={handleSendTestMessage} className="p-3 bg-white border-t border-gray-200 flex gap-2">
+              <input
+                type="text"
+                value={testInput}
+                onChange={(e) => setTestInput(e.target.value)}
+                placeholder="Ask your AI agent a question..."
+                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-orange focus:border-brand-orange"
+                disabled={testSending}
+                autoFocus
+              />
+              <button
+                type="submit"
+                disabled={testSending || !testInput.trim()}
+                className="px-4 py-2.5 bg-brand-orange text-white rounded-xl hover:bg-orange-600 disabled:opacity-50 transition-colors shadow-xs flex items-center justify-center"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </form>
           </div>
         </div>
       )}

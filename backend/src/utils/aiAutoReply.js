@@ -45,10 +45,11 @@ const handleIncomingAiReply = async (userId, message, phoneId) => {
 
     // 2. Verify User Plan & Quota using actual subscription
     const plan = await getUserPlan(userId);
-    if (plan === 'starter' || plan === 'trial') return;
 
     let monthlyLimit = 500; // default Growth
     if (plan === 'pro') monthlyLimit = 2000;
+    else if (plan === 'starter') monthlyLimit = 100;
+    else if (plan === 'trial') monthlyLimit = 50; // Allow 50 free replies in trial!
 
     // Check if quota exceeded
     if ((agent.ai_replies_this_month || 0) >= monthlyLimit) {

@@ -233,9 +233,10 @@ router.get('/', auth, async (req, res) => {
 
     // Get plan from actual subscription or fallback to user record
     const plan = await getUserPlan(userId);
-    const isLocked = plan === 'trial' || plan === 'starter';
+    // Allow trial users to fully test AI Agent (50 free replies), only lock for starter or expired
+    const isLocked = plan === 'starter' || plan === 'paused' || plan === 'expired';
 
-    let quotaLimit = 0;
+    let quotaLimit = 50; // trial gets 50 test replies
     if (plan === 'growth') quotaLimit = 500;
     if (plan === 'pro') quotaLimit = 2000;
 
@@ -604,6 +605,91 @@ router.delete('/:id', auth, async (req, res) => {
   } catch (err) {
     console.error('Error deleting AI agent:', err);
     res.status(500).json({ error: 'Failed to delete AI agent' });
+  }
+});
+
+// POST /api/ai-agent/:id/test-chat — Test simulator inside dashboard
+router.post('/:id/test-chat', auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+    const { message } = req.body;
+
+    if (!message || !message.trim()) {
+      return res.status(400).json({ error: 'Message cannot be empty.' });
+    }
+
+    const { data: agent } = await supabaseAdmin
+      .from('ai_agents')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', userId)
+      .single();
+
+    if (!agent) {
+      return res.status(404).json({ error: 'AI Agent not found.' });
+    }
+
+    // Fetch up to 10 knowledge chunks for context
+    const { data: chunks } = await supabaseAdmin
+      .from('knowledge_chunks')
+      .select('content')
+      .eq('agent_id', agent.id)
+      .limit(10);
+
+    const relevantKnowledge = (chunks || []).map(c => c.content).join('\n---\n');
+
+    const openai = getOpenAIClient();
+    if (!openai) {
+      return res.json({
+        reply: "AI Chatbot test reply: (OpenAI API Key is not set in backend. Please set OPENAI_API_KEY in Render environment).",
+        needs_human: false
+      });
+    }
+
+    const systemPrompt = `You are an AI Customer Support Agent for ${agent.name} (${agent.business_type || 'Business'}).
+Your primary job is to answer customer questions accurately on WhatsApp using the Knowledge Base below and custom instructions.
+
+CUSTOM INSTRUCTIONS:
+${agent.custom_instructions || 'Be polite, helpful, and concise.'}
+
+KNOWLEDGE BASE:
+${relevantKnowledge || 'No specific knowledge base article found.'}
+
+RULES:
+1. Keep replies friendly, concise (suitable for WhatsApp), and well-formatted.
+2. Rely strictly on the Knowledge Base and Custom Instructions.
+3. If the user explicitly asks for human support or if the answer is missing from the Knowledge Base, set "needs_human" to true.
+4. Output MUST be valid JSON with keys: "reply" (string) and "needs_human" (boolean).`;
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: message.trim() },
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.3,
+    });
+
+    const responseContent = completion.choices[0]?.message?.content;
+    let reply = "Hello! How can I assist you today?";
+    let needsHuman = false;
+
+    if (responseContent) {
+      try {
+        const parsed = JSON.parse(responseContent);
+        reply = parsed.reply || reply;
+        needsHuman = Boolean(parsed.needs_human);
+      } catch (e) {
+        reply = responseContent;
+      }
+    }
+
+    res.json({ reply, needs_human: needsHuman });
+  } catch (err) {
+    console.error('Test chat error:', err);
+    res.status(500).json({ error: err.message || 'Failed to generate AI response' });
   }
 });
 

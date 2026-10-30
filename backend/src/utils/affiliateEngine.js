@@ -9,14 +9,14 @@ const { supabaseAdmin } = require('../config/supabase');
  *  - Month 3: Rs 100
  *  - Month 4+: Rs 0 (Max 3 months, Total Rs 700)
  * 
- * Growth Plan (Rs 2,499):
+ * Growth Plan (Rs 2,999):
  *  - Month 1: Rs 700
  *  - Month 2: Rs 350
  *  - Month 3: Rs 175
  *  - Month 4: Rs 85
  *  - Month 5+: Rs 0 (Max 4 months, Total Rs 1,310)
  * 
- * Pro Plan (Rs 5,999):
+ * Pro Plan (Rs 7,999):
  *  - Month 1: Rs 1,200
  *  - Month 2: Rs 600
  *  - Month 3: Rs 300

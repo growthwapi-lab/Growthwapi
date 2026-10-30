@@ -485,7 +485,7 @@ export default function AffiliateProgram() {
             </span>
             <div className="flex justify-between items-center">
               <span className="font-bold text-sm text-gray-900">Growth Plan</span>
-              <span className="text-xs font-mono font-bold text-brand-orange">₹2,499/mo</span>
+              <span className="text-xs font-mono font-bold text-brand-orange">₹2,999/mo</span>
             </div>
             <div className="space-y-1.5 text-xs text-gray-600">
               <div className="flex justify-between bg-white p-2 rounded-lg border border-orange-100">
@@ -514,7 +514,7 @@ export default function AffiliateProgram() {
           <div className="p-4 rounded-2xl border border-purple-200 bg-purple-50/30 space-y-3">
             <div className="flex justify-between items-center">
               <span className="font-bold text-sm text-gray-900">Pro Plan</span>
-              <span className="text-xs font-mono font-bold text-brand-purple">₹5,999/mo</span>
+              <span className="text-xs font-mono font-bold text-brand-purple">₹7,999/mo</span>
             </div>
             <div className="space-y-1.5 text-xs text-gray-600">
               <div className="flex justify-between bg-white p-2 rounded-lg border border-purple-100">

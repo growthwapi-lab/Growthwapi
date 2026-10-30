@@ -342,7 +342,7 @@ export default function AffiliateLanding() {
                 <span className="px-3 py-1 bg-orange-100 text-brand-orange rounded-full text-xs font-bold">
                   Growth Plan
                 </span>
-                <span className="text-xs font-bold text-gray-500">₹2,499 / mo</span>
+                <span className="text-xs font-bold text-gray-500">₹2,999 / mo</span>
               </div>
               <div className="text-3xl font-black text-gray-900 mb-1">₹1,310 Total</div>
               <p className="text-xs text-gray-500 mb-6">Recurring payouts over the first 4 months</p>
@@ -383,7 +383,7 @@ export default function AffiliateLanding() {
                 <span className="px-3 py-1 bg-purple-100 text-brand-purple rounded-full text-xs font-bold">
                   Pro Plan
                 </span>
-                <span className="text-xs font-bold text-gray-400">₹5,999 / mo</span>
+                <span className="text-xs font-bold text-gray-400">₹7,999 / mo</span>
               </div>
               <div className="text-2xl font-black text-gray-900 mb-1">₹2,325 Total</div>
               <p className="text-xs text-gray-500 mb-6">Recurring payouts over the first 5 months</p>

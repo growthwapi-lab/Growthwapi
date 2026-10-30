@@ -5,6 +5,7 @@ const auth = require('../middleware/auth');
 const { supabaseAdmin } = require('../config/supabase');
 const { COMMISSION_SCHEDULE } = require('../utils/affiliateEngine');
 
+const { getActiveSubscription } = require('../utils/trialLimits');
 const router = express.Router();
 const ADMIN_EMAILS = ['sauravrai8757@gmail.com', 'growthwapi@gmail.com'];
 
@@ -73,6 +74,23 @@ router.get('/profile', auth, async (req, res) => {
       profile.is_approved = true;
     }
 
+    // Auto-activate partner if user already has an active WhatsApp plan
+    const { data: activeSub } = await supabaseAdmin
+      .from('subscriptions')
+      .select('id')
+      .eq('user_id', req.user.id)
+      .eq('status', 'active')
+      .neq('payment_for', 'wallet_recharge')
+      .in('plan_type', ['starter', 'growth', 'pro'])
+      .maybeSingle();
+    if (activeSub && !profile.is_paid_member) {
+      await supabaseAdmin
+        .from('affiliate_profiles')
+        .update({ is_paid_member: true, is_approved: true })
+        .eq('id', profile.id);
+      profile.is_paid_member = true;
+      profile.is_approved = true;
+    }
     res.json({
       profile,
       commissionSchedule: COMMISSION_SCHEDULE
@@ -198,11 +216,32 @@ router.get('/dashboard', auth, async (req, res) => {
     const userId = req.user.id;
 
     // 1. Profile
-    const { data: profile } = await supabaseAdmin
+    let { data: profile } = await supabaseAdmin
       .from('affiliate_profiles')
       .select('*')
       .eq('user_id', userId)
       .maybeSingle();
+
+    // Auto-activate if user holds an active WhatsApp plan
+    if (profile && !profile.is_paid_member) {
+      const { data: activeSub } = await supabaseAdmin
+        .from('subscriptions')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .neq('payment_for', 'wallet_recharge')
+        .in('plan_type', ['starter', 'growth', 'pro'])
+        .maybeSingle();
+
+      if (activeSub) {
+        await supabaseAdmin
+          .from('affiliate_profiles')
+          .update({ is_paid_member: true, is_approved: true })
+          .eq('id', profile.id);
+        profile.is_paid_member = true;
+        profile.is_approved = true;
+      }
+    }
 
     // 2. Referrals list (with client profile info)
     const { data: referrals } = await supabaseAdmin
@@ -275,7 +314,26 @@ router.post('/request-payout', auth, async (req, res) => {
     }
 
     if (!profile.is_paid_member) {
-      return res.status(403).json({ error: 'Please activate your partner account (₹200 one-time fee) to request payouts.' });
+      // Auto-activate if user already has an active WhatsApp subscription
+      const { data: activeSub } = await supabaseAdmin
+        .from('subscriptions')
+        .select('id')
+        .eq('user_id', req.user.id)
+        .eq('status', 'active')
+        .neq('payment_for', 'wallet_recharge')
+        .in('plan_type', ['starter', 'growth', 'pro'])
+        .maybeSingle();
+
+      if (activeSub) {
+        await supabaseAdmin
+          .from('affiliate_profiles')
+          .update({ is_paid_member: true, is_approved: true })
+          .eq('id', profile.id);
+        profile.is_paid_member = true;
+        profile.is_approved = true;
+      } else {
+        return res.status(403).json({ error: 'Please activate your partner account (₹200 one-time fee) to request payouts.' });
+      }
     }
 
     if (Number(profile.pending_balance) < requestedAmount) {

@@ -49,6 +49,7 @@ export default function AffiliateProgram() {
   // Payment Settings modal / form
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [savingSettings, setSavingSettings] = useState(false)
+  const [activePlan, setActivePlan] = useState(null)
   const [settingsForm, setSettingsForm] = useState({
     upi_id: '',
     bank_account_number: '',
@@ -58,6 +59,10 @@ export default function AffiliateProgram() {
 
   useEffect(() => {
     fetchAffiliateDashboard()
+    // Fetch active WhatsApp plan to decide if activation fee should be skipped
+    api.get('/api/users/active-plan').then(res => {
+      setActivePlan(res.data)
+    }).catch(() => {})
   }, [])
 
   const fetchAffiliateDashboard = async () => {
@@ -224,7 +229,7 @@ export default function AffiliateProgram() {
           <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 flex flex-col gap-2 shrink-0">
             <div className="flex items-center justify-between gap-3">
               <span className="text-[11px] font-bold text-orange-100 uppercase tracking-wider">Your Partner Code</span>
-              {profile?.is_paid_member ? (
+              {profile?.is_paid_member || activePlan?.plan ? (
                 <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-100 border border-emerald-300/30 text-[10px] font-bold inline-flex items-center gap-1">
                   <CheckCircle2 size={11} /> VIP Active
                 </span>
@@ -250,8 +255,8 @@ export default function AffiliateProgram() {
         </div>
       </div>
 
-      {/* Activation Paywall Banner if not yet paid */}
-      {!profile?.is_paid_member && (
+      {/* Activation Paywall Banner if not yet paid AND no active WhatsApp plan */}
+      {!profile?.is_paid_member && !activePlan?.plan && (
         <div className="bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border-2 border-brand-orange/40 rounded-3xl p-6 sm:p-7 shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
           <div className="space-y-1.5 max-w-xl">
             <div className="flex items-center gap-2">

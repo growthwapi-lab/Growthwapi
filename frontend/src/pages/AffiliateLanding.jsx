@@ -55,24 +55,24 @@ export default function AffiliateLanding() {
 
   const faqs = [
     {
-      q: 'Affiliate Partner banne ke liye kya mujhe koi technical knowledge ya WhatsApp API chahiye?',
-      a: 'Bilkul nahi! Aapko koi WhatsApp API ya developer knowledge ki zaroorat nahi hai. Aapko bas apna referral link business owners, shopkeepers ya agencies ke sath share karna hai. Baki sara onboarding, support aur server handling Growthwapi team khud karegi.'
+      q: 'Do I need any technical knowledge or WhatsApp API to become an Affiliate Partner?',
+      a: 'Not at all! You do not need any WhatsApp API or developer background. Simply share your unique referral link with business owners, retail shops, or marketing agencies. Growthwapi handles all client onboarding, customer support, and server infrastructure.'
     },
     {
-      q: 'Affiliate Partner banne ke liye ₹200 one-time fee kyun hai?',
-      a: 'Ye ₹200 ek chhota sa one-time lifetime activation fee hai taaki fake spam bots aur non-serious signups filter ho sakein. Isse aapko dedicated verified partner portal, live click tracking link, marketing assets aur automated UPI/Bank withdrawal engine milta hai. Iske baad aapse kabhi koi monthly ya renewal fee nahi li jayegi.'
+      q: 'Why is there a one-time ₹200 fee to become an Affiliate Partner?',
+      a: 'The ₹200 is a one-time lifetime verification fee designed to filter out spam bots and ensure high-intent partners. It unlocks your dedicated partner dashboard, custom live click tracking link, marketing assets, and automated direct UPI/Bank withdrawal system. No monthly or renewal fees ever.'
     },
     {
-      q: 'Mujhe commission kab aur kaise milega?',
-      a: 'Jaise hi aapka refer kiya hua client subscription renew ya buy karta hai, commission turant aapke partner wallet me credit ho jata hai. Jaise hi aapka balance ₹400 ya usse jyada hota hai, aap 1-click me apne UPI ID (GPay, PhonePe, Paytm) ya Bank Account me payout request bhej sakte hain jo 24 hours ke andar process ho jata hai.'
+      q: 'When and how do I receive my commissions?',
+      a: 'As soon as your referred client subscribes or renews their monthly plan, commission is instantly credited to your partner wallet. Once your balance reaches ₹400 or more, you can request an instant withdrawal directly to your UPI ID (Google Pay, PhonePe, Paytm) or Bank Account — processed within 24 hours.'
     },
     {
-      q: 'Recurring commission ka schedule kaise kaam karta hai?',
-      a: 'Har package ke liye tiered schedule set hai: Starter Plan me pehle 3 mahine (₹400 + ₹200 + ₹100 = ₹700), Growth Plan me pehle 4 mahine (₹700 + ₹350 + ₹175 + ₹85 = ₹1,310), aur Pro Plan me pehle 5 mahine (₹1,200 + ₹600 + ₹300 + ₹150 + ₹75 = ₹2,325 per client).'
+      q: 'How does the recurring commission schedule work?',
+      a: 'Every subscription plan has a clear tiered commission schedule: Starter Plan pays for 3 months (₹400 + ₹200 + ₹100 = ₹700 total), Growth Plan pays for 4 months (₹700 + ₹350 + ₹175 + ₹85 = ₹1,310 total), and Pro Plan pays for 5 months (₹1,200 + ₹600 + ₹300 + ₹150 + ₹75 = ₹2,325 total per client).'
     },
     {
-      q: 'Agar client plan upgrade kar leta hai toh kya hoga?',
-      a: 'Agar client upgraded plan buy karta hai toh aapko upgraded schedule ke hisab se higher recurring commission credit hoga!'
+      q: 'What happens if a client upgrades to a higher plan?',
+      a: 'If your referred client upgrades their plan, your future recurring commissions will automatically adjust upward based on the upgraded plan schedule!'
     }
   ]
 
@@ -199,7 +199,7 @@ export default function AffiliateLanding() {
               Calculate Your Monthly Passive Income
             </h2>
             <p className="text-sm text-gray-600 mt-2">
-              Dekhein agar aap har mahine kuch clients refer karte hain toh aapki kitni kamayi hogi.
+              See how much recurring passive income you can generate by referring business clients.
             </p>
           </div>
 
@@ -208,7 +208,7 @@ export default function AffiliateLanding() {
             <div>
               <div className="flex items-center justify-between mb-3">
                 <label className="text-xs sm:text-sm font-extrabold text-gray-700">
-                  Kitne Business Clients Refer Kar Sakte Hain?
+                  How Many Business Clients Can You Refer?
                 </label>
                 <span className="text-xl sm:text-2xl font-black text-brand-orange bg-orange-50 px-3.5 py-1 rounded-xl">
                   {clientCount} Clients
@@ -232,7 +232,7 @@ export default function AffiliateLanding() {
             {/* Plan Selector */}
             <div>
               <label className="text-xs sm:text-sm font-extrabold text-gray-700 block mb-3">
-                Client Kaunsa Package Lenge?
+                Which Plan Will Your Clients Choose?
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 {[
@@ -290,7 +290,7 @@ export default function AffiliateLanding() {
             Exact Recurring Commission Per Package
           </h2>
           <p className="text-sm text-gray-600 mt-2 max-w-xl mx-auto">
-            Jaise jaise aapka client har mahine apna subscription renew karega, aapko niche diya gaya exact amount direct milta rahega.
+            Every time your referred client renews their monthly subscription, you earn the exact commission shown below.
           </p>
         </div>
 
@@ -305,7 +305,7 @@ export default function AffiliateLanding() {
                 <span className="text-xs font-bold text-gray-400">₹999 / mo</span>
               </div>
               <div className="text-2xl font-black text-gray-900 mb-1">₹700 Total</div>
-              <p className="text-xs text-gray-500 mb-6">Pehle 3 mahine tak recurring payout</p>
+              <p className="text-xs text-gray-500 mb-6">Recurring payouts over the first 3 months</p>
 
               <div className="space-y-2.5 border-t border-gray-100 pt-4 text-xs">
                 <div className="flex justify-between py-1">
@@ -345,7 +345,7 @@ export default function AffiliateLanding() {
                 <span className="text-xs font-bold text-gray-500">₹2,499 / mo</span>
               </div>
               <div className="text-3xl font-black text-gray-900 mb-1">₹1,310 Total</div>
-              <p className="text-xs text-gray-500 mb-6">Pehle 4 mahine tak recurring payout</p>
+              <p className="text-xs text-gray-500 mb-6">Recurring payouts over the first 4 months</p>
 
               <div className="space-y-2.5 border-t border-orange-100 pt-4 text-xs">
                 <div className="flex justify-between py-1">
@@ -386,7 +386,7 @@ export default function AffiliateLanding() {
                 <span className="text-xs font-bold text-gray-400">₹5,999 / mo</span>
               </div>
               <div className="text-2xl font-black text-gray-900 mb-1">₹2,325 Total</div>
-              <p className="text-xs text-gray-500 mb-6">Pehle 5 mahine tak recurring payout</p>
+              <p className="text-xs text-gray-500 mb-6">Recurring payouts over the first 5 months</p>
 
               <div className="space-y-2.5 border-t border-gray-100 pt-4 text-xs">
                 <div className="flex justify-between py-1">
@@ -425,7 +425,7 @@ export default function AffiliateLanding() {
           <div className="text-center mb-14">
             <span className="text-xs font-extrabold text-brand-orange uppercase tracking-wider">Simple Process</span>
             <h2 className="text-2xl sm:text-4xl font-black text-gray-900 mt-1">
-              Kamayi Kaise Shuru Karein (4 Steps)
+              How to Start Earning (4 Easy Steps)
             </h2>
           </div>
 
@@ -434,22 +434,22 @@ export default function AffiliateLanding() {
               {
                 step: '01',
                 title: 'Register & Pay ₹200',
-                desc: 'Sign up karke ek bar ₹200 one-time activation fee pay karein. Lifetime VIP Partner access unlock ho jata hai.'
+                desc: 'Sign up and pay the ₹200 one-time lifetime fee. Instant VIP Partner account verification is unlocked.'
               },
               {
                 step: '02',
                 title: 'Get Referral Link',
-                desc: 'Aapko apna custom tracking link (growthwapi.com/?ref=CODE) aur marketing banners turant milte hain.'
+                desc: 'Instantly get your custom tracking link (growthwapi.com/?ref=CODE) and ready-to-share marketing assets.'
               },
               {
                 step: '03',
                 title: 'Share With Businesses',
-                desc: 'Apne link ko WhatsApp status, clients, coaching centers, agency networks ya YouTube/Instagram par share karein.'
+                desc: 'Share your link via WhatsApp, direct client pitches, local businesses, marketing agencies, or social media.'
               },
               {
                 step: '04',
                 title: 'Withdraw via UPI',
-                desc: 'Client subscribe karega toh wallet me commission add hoga. ₹400 hote hi direct UPI ya Bank me withdrawal lein.'
+                desc: 'When clients subscribe, commissions are credited to your wallet. Request payout to UPI or Bank once you hit ₹400.'
               }
             ].map((st) => (
               <div key={st.step} className="bg-white p-6 rounded-3xl border border-gray-200 shadow-2xs space-y-3">
@@ -465,7 +465,7 @@ export default function AffiliateLanding() {
       {/* ── FAQ SECTION ── */}
       <section id="faq" className="py-16 sm:py-24 max-w-4xl mx-auto px-4 sm:px-6">
         <div className="text-center mb-12">
-          <span className="text-xs font-extrabold text-brand-orange uppercase tracking-wider">Aam Sawal</span>
+          <span className="text-xs font-extrabold text-brand-orange uppercase tracking-wider">Common Questions</span>
           <h2 className="text-2xl sm:text-4xl font-black text-gray-900 mt-1">
             Frequently Asked Questions
           </h2>
@@ -507,7 +507,7 @@ export default function AffiliateLanding() {
             Start Your Passive Income Journey with Growthwapi Today
           </h2>
           <p className="text-sm sm:text-base text-blue-100 max-w-xl mx-auto">
-            Bas ₹200 one-time fee pay karke ban jaiye Growthwapi Partner aur har mahine direct UPI me recurring payment paayein.
+            Pay just ₹200 one-time to become a verified Growthwapi Partner and earn recurring commissions transferred directly to your UPI or Bank.
           </p>
 
           <div className="pt-2">

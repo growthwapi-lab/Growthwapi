@@ -263,7 +263,7 @@ export default function AffiliateProgram() {
               </h2>
             </div>
             <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-              Bas ek baar <b>₹200</b> one-time activation fee pay karein. Isse aapka referral link verified ho jayega aur aap har client par up to <b>₹2,325</b> recurring commission kamana shuru kar sakte hain with instant UPI withdrawals!
+              Pay the one-time <b>₹200</b> lifetime activation fee once. This activates your verified partner status, unlocks your tracking link, and allows you to earn up to <b>₹2,325</b> recurring commission per client with instant UPI & Bank payouts!
             </p>
           </div>
 
@@ -403,7 +403,7 @@ export default function AffiliateProgram() {
                 )}
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Aapka commission is UPI ID ya Bank Account me direct transfer kiya jayega.
+                Your commissions will be directly transferred to this UPI ID or Bank Account.
               </p>
 
               <div className="flex flex-wrap items-center gap-3 mt-3 text-xs">
@@ -721,7 +721,7 @@ export default function AffiliateProgram() {
                       </div>
                     ) : (
                       <div className="p-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 flex items-center justify-between">
-                        <span>⚠️ UPI ID add nahi hai</span>
+                        <span>⚠️ UPI ID not added yet</span>
                         <button
                           type="button"
                           onClick={() => { setShowPayoutModal(false); setShowSettingsModal(true) }}
@@ -738,7 +738,7 @@ export default function AffiliateProgram() {
                       </div>
                     ) : (
                       <div className="p-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 flex items-center justify-between">
-                        <span>⚠️ Bank A/C add nahi hai</span>
+                        <span>⚠️ Bank account not added yet</span>
                         <button
                           type="button"
                           onClick={() => { setShowPayoutModal(false); setShowSettingsModal(true) }}

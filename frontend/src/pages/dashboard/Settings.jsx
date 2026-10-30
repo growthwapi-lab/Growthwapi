@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   User, Building2, Phone, Mail, Lock, Smartphone,
-  AlertTriangle, Package, CheckCircle, Pencil, X, Copy, Check
+  AlertTriangle, Package, CheckCircle, Pencil, X, Copy, Check,
+  CreditCard, ExternalLink, ShieldCheck, FileText, CheckCircle2, Globe
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import api from '../../lib/api'
@@ -506,6 +507,122 @@ export default function Settings() {
                 >
                   {copiedKey === 'Verify Token' ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── CARD 1: META WHATSAPP BILLING CARD SETUP ── */}
+        <div className="p-5 bg-gradient-to-r from-blue-50/70 via-indigo-50/50 to-blue-50/70 rounded-2xl border border-blue-200/80 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-brand-blue text-white rounded-xl shadow-xs shrink-0">
+                <CreditCard size={20} />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-gray-900 text-sm">
+                  Official Meta WhatsApp Billing (Card Setup)
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Link your Debit/Credit card directly to your Meta Business Account for official WhatsApp usage charges.
+                </p>
+              </div>
+            </div>
+
+            <a
+              href="https://business.facebook.com/billing_hub/payment_settings"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-blue hover:bg-blue-900 text-white font-extrabold text-xs rounded-xl shadow-sm transition-all shrink-0"
+            >
+              <span>Set up WhatsApp Billing Card on Meta</span>
+              <ExternalLink size={14} />
+            </a>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4 text-[11px] text-gray-600 pt-2 border-t border-blue-100">
+            <span className="flex items-center gap-1 font-semibold text-emerald-700">
+              <CheckCircle2 size={13} /> 100% Secure Meta Gateway
+            </span>
+            <span className="flex items-center gap-1 font-semibold text-gray-600">
+              • 1,000 Free Service Conversations/mo Included by Meta
+            </span>
+            <span className="flex items-center gap-1 font-semibold text-gray-600">
+              • No middleman markup
+            </span>
+          </div>
+        </div>
+
+        {/* ── CARD 2: OFFICIAL GREEN TICK & BUSINESS VERIFICATION ── */}
+        <div className="p-5 bg-gradient-to-r from-emerald-50/70 via-teal-50/50 to-emerald-50/70 rounded-2xl border border-emerald-200/80 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 bg-emerald-600 text-white rounded-xl shadow-xs shrink-0 mt-0.5">
+                <ShieldCheck size={20} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-extrabold text-gray-900 text-sm">
+                    Meta Business Verification & Official Green Tick Badge
+                  </h3>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-wider">
+                    High Volume
+                  </span>
+                </div>
+                <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                  Required when you want to scale from 250 to <strong>1,000, 10,000, or Unlimited messages/day</strong> and apply for the <strong>Official Green Tick Verified Badge</strong> on WhatsApp.
+                </p>
+              </div>
+            </div>
+
+            <a
+              href="https://business.facebook.com/settings/security"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-sm transition-all shrink-0"
+            >
+              <span>Open Meta Verification Portal</span>
+              <ExternalLink size={14} />
+            </a>
+          </div>
+
+          {/* Checklist of required documents */}
+          <div className="bg-white/80 p-4 rounded-xl border border-emerald-100 space-y-2.5">
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-900 block">
+              Required Documents Checklist for Meta Verification:
+            </span>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs text-gray-700">
+              <div className="flex items-start gap-2">
+                <span className="text-emerald-600 font-bold">1.</span>
+                <div>
+                  <strong>Legal Business Proof (Any ONE):</strong>
+                  <p className="text-[11px] text-gray-500 mt-0.5">GST Certificate (Fastest), Udyam MSME, Shop Act / Gumasta, or Incorporation Certificate.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2">
+                <span className="text-emerald-600 font-bold">2.</span>
+                <div>
+                  <strong>Business Address & Phone Proof:</strong>
+                  <p className="text-[11px] text-gray-500 mt-0.5">Current Bank Statement or Electricity / Utility bill matching your registered business address.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2">
+                <span className="text-emerald-600 font-bold">3.</span>
+                <div>
+                  <strong>Official Website or Online Presence:</strong>
+                  <p className="text-[11px] text-gray-500 mt-0.5">Working website showing your business name, address, and contact details matching your legal proof.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2">
+                <span className="text-emerald-600 font-bold">4.</span>
+                <div>
+                  <strong>Active Business Card in Meta Billing:</strong>
+                  <p className="text-[11px] text-gray-500 mt-0.5">A valid Debit/Credit card linked to Meta for automated conversation billing.</p>
+                </div>
               </div>
             </div>
           </div>

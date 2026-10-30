@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
-import { MessageSquare, Users, Send, BarChart2, Wallet, Settings, LogOut, Menu, X, FileText, Code, Bot } from 'lucide-react'
+import { MessageSquare, Users, Send, BarChart2, Wallet, Settings, LogOut, Menu, X, FileText, Code, Bot, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../lib/api'
 
@@ -10,6 +10,20 @@ export default function DashboardLayout() {
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [activePlan, setActivePlan] = useState(null)
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  const ADMIN_EMAILS = ['sauravrai8757@gmail.com', 'growthwapi@gmail.com']
+  const userEmail = (user?.email || '').toLowerCase()
+
+  useEffect(() => {
+    if (ADMIN_EMAILS.includes(userEmail)) {
+      setIsAdmin(true)
+    } else {
+      api.get('/api/admin/verify')
+        .then(() => setIsAdmin(true))
+        .catch(() => setIsAdmin(false))
+    }
+  }, [userEmail])
 
   useEffect(() => {
     fetchActivePlan()
@@ -35,6 +49,7 @@ export default function DashboardLayout() {
     { name: 'Wallet', path: '/dashboard/wallet', icon: Wallet },
     { name: 'Developer Hub', path: '/dashboard/developer', icon: Code },
     { name: 'Settings', path: '/dashboard/settings', icon: Settings },
+    ...(isAdmin ? [{ name: 'Admin Panel', path: '/dashboard/admin', icon: ShieldCheck, badge: 'SUPER' }] : []),
   ]
 
 
@@ -90,7 +105,12 @@ export default function DashboardLayout() {
                 }`}
               >
                 <item.icon size={20} />
-                {item.name}
+                <span className="flex-1 truncate">{item.name}</span>
+                {item.badge && (
+                  <span className="text-[9px] font-black tracking-wider px-1.5 py-0.5 rounded-md bg-amber-400 text-gray-900 shadow-2xs">
+                    {item.badge}
+                  </span>
+                )}
               </Link>
             ))}
           </nav>

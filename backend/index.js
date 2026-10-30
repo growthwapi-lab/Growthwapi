@@ -9,6 +9,7 @@ const usersRoutes = require('./src/routes/users');
 const contactsRoutes = require('./src/routes/contacts');
 const developerRoutes = require('./src/routes/developer');
 const aiAgentRoutes = require('./src/routes/aiAgent');
+const adminRoutes = require('./src/routes/admin');
 
 const app = express();
 
@@ -48,6 +49,7 @@ app.use('/api/users', usersRoutes);
 app.use('/api/contacts', contactsRoutes);
 app.use('/api/developer', developerRoutes);
 app.use('/api/ai-agent', aiAgentRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api', developerRoutes);
 
 

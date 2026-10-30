@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
-import { MessageSquare, Users, Send, BarChart2, Wallet, Settings, LogOut, Menu, X, FileText, Code, Bot, ShieldCheck, Award, UserPlus } from 'lucide-react'
+import { MessageSquare, Users, Send, BarChart2, Wallet, Settings, LogOut, Menu, X, FileText, Code, Bot, ShieldCheck, Award, UserPlus, Compass, BookOpen } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../lib/api'
 
@@ -47,6 +47,7 @@ export default function DashboardLayout() {
         { name: 'Contacts', path: '/dashboard/contacts', icon: Users },
         { name: 'Templates', path: '/dashboard/templates', icon: FileText },
         { name: 'Broadcast', path: '/dashboard/broadcast', icon: Send },
+        { name: 'Feature Tour', path: '/dashboard/overview', icon: BookOpen },
         { name: 'Settings', path: '/dashboard/settings', icon: Settings },
       ]
     : [
@@ -61,6 +62,8 @@ export default function DashboardLayout() {
         { name: 'Wallet', path: '/dashboard/wallet', icon: Wallet },
         { name: 'Developer Hub', path: '/dashboard/developer', icon: Code },
         { name: 'Affiliate Program', path: '/dashboard/affiliate', icon: Award, badge: 'EARN' },
+        { name: 'Setup Guide', path: '/dashboard/setup-guide', icon: Compass, badge: 'GUIDE' },
+        { name: 'Feature Tour', path: '/dashboard/overview', icon: BookOpen },
         { name: 'Settings', path: '/dashboard/settings', icon: Settings },
         ...(isAdmin ? [{ name: 'Admin Panel', path: '/dashboard/admin', icon: ShieldCheck, badge: 'SUPER' }] : []),
       ]

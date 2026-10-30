@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import {
   User, Building2, Phone, Mail, Lock, Smartphone,
   AlertTriangle, Package, CheckCircle, Pencil, X, Copy, Check,
-  CreditCard, ExternalLink, ShieldCheck, FileText, CheckCircle2, Globe
+  CreditCard, ExternalLink, ShieldCheck, FileText, CheckCircle2, Globe, Compass
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import api from '../../lib/api'
@@ -389,6 +389,12 @@ export default function Settings() {
               </span>
               <p className="text-xs text-amber-700 mt-1">Enter your Meta credentials below to enable sending and receiving WhatsApp messages.</p>
             </div>
+            <Link
+              to="/dashboard/setup-guide"
+              className="inline-flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow-xs transition-colors shrink-0"
+            >
+              <Compass size={14} /> Need Help? View Setup Guide &rarr;
+            </Link>
           </div>
         )}
 

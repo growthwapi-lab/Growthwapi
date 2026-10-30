@@ -214,20 +214,28 @@ export default function DashboardHome() {
               Connect via Meta's official WhatsApp Embedded Signup to start broadcasting & sending automated messages.
             </p>
           </div>
-          <button
-            onClick={launchEmbeddedSignup}
-            disabled={connecting}
-            className="bg-white text-brand-orange px-6 py-3 rounded-lg font-bold hover:bg-orange-50 transition-colors whitespace-nowrap flex items-center gap-2 shadow-md disabled:opacity-50"
-          >
-            {connecting ? (
-              <>
-                <div className="w-4 h-4 border-2 border-brand-orange border-t-transparent rounded-full animate-spin" />
-                Connecting...
-              </>
-            ) : (
-              'Connect Now'
-            )}
-          </button>
+          <div className="flex flex-col sm:flex-row items-center gap-2.5 mt-4 md:mt-0">
+            <Link
+              to="/dashboard/setup-guide"
+              className="bg-white/20 hover:bg-white/30 text-white px-4 py-3 rounded-lg font-bold text-xs sm:text-sm transition-colors whitespace-nowrap border border-white/30"
+            >
+              Step-by-Step Guide &rarr;
+            </Link>
+            <button
+              onClick={launchEmbeddedSignup}
+              disabled={connecting}
+              className="bg-white text-brand-orange px-6 py-3 rounded-lg font-bold hover:bg-orange-50 transition-colors whitespace-nowrap flex items-center gap-2 shadow-md disabled:opacity-50 text-xs sm:text-sm"
+            >
+              {connecting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-brand-orange border-t-transparent rounded-full animate-spin" />
+                  Connecting...
+                </>
+              ) : (
+                'Connect Now'
+              )}
+            </button>
+          </div>
         </div>
       )}
 

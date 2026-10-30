@@ -18,6 +18,8 @@ import AdminDashboard from './pages/dashboard/AdminDashboard'
 import AffiliateProgram from './pages/dashboard/AffiliateProgram'
 import AffiliateLanding from './pages/AffiliateLanding'
 import TeamMembers from './pages/dashboard/TeamMembers'
+import SetupGuide from './pages/dashboard/SetupGuide'
+import GettingStarted from './pages/dashboard/GettingStarted'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
@@ -48,6 +50,8 @@ function App() {
         <Route path="developer" element={<DeveloperHub />} />
         <Route path="affiliate" element={<AffiliateProgram />} />
         <Route path="team" element={<TeamMembers />} />
+        <Route path="setup-guide" element={<SetupGuide />} />
+        <Route path="overview" element={<GettingStarted />} />
         <Route path="settings" element={<Settings />} />
         <Route path="admin" element={<AdminDashboard />} />
       </Route>

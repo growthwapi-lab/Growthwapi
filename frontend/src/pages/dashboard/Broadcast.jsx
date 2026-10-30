@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Send, Users, FileText, Clock, CheckCircle2, Zap, LayoutTemplate } from 'lucide-react'
+import {
+  Send, Users, FileText, Clock, CheckCircle2, Zap, LayoutTemplate,
+  UserCheck, CheckSquare, Square, Search, X, Filter
+} from 'lucide-react'
 import { Link } from 'react-router-dom'
 import api from '../../lib/api'
 import toast from 'react-hot-toast'
@@ -21,10 +24,67 @@ export default function Broadcast() {
   const [headerMediaUrl, setHeaderMediaUrl] = useState('')
   const [loadingTemplates, setLoadingTemplates] = useState(false)
 
+  // Contacts Selection State
+  const [contacts, setContacts] = useState([])
+  const [showContactPicker, setShowContactPicker] = useState(false)
+  const [contactSearch, setContactSearch] = useState('')
+  const [selectedTagFilter, setSelectedTagFilter] = useState('ALL')
+
   useEffect(() => {
     fetchBroadcasts()
     fetchApprovedTemplates()
+    fetchContactsList()
   }, [])
+
+  const fetchContactsList = async () => {
+    try {
+      const res = await api.get('/api/contacts')
+      setContacts(res.data || [])
+    } catch (err) {
+      console.error('Failed to load contacts for broadcast:', err)
+    }
+  }
+
+  const handleSelectAllContacts = () => {
+    if (contacts.length === 0) {
+      toast.error('No saved contacts found. Add contacts first!')
+      return
+    }
+
+    const currentList = numbers.split('\n').map(n => n.trim()).filter(Boolean)
+    const existingSet = new Set(currentList)
+    const newNumbers = []
+
+    contacts.forEach(c => {
+      if (c.phone) {
+        let clean = String(c.phone).trim().replace(/[\s\-\(\)\+]/g, '')
+        if (clean.length === 10) clean = '91' + clean
+        if (!existingSet.has(clean)) {
+          newNumbers.push(clean)
+          existingSet.add(clean)
+        }
+      }
+    })
+
+    const combined = [...currentList, ...newNumbers].join('\n')
+    setNumbers(combined)
+    toast.success(`Added ${newNumbers.length} contacts! Total: ${existingSet.size}`)
+  }
+
+  const handleToggleSingleContact = (phone) => {
+    let clean = String(phone).trim().replace(/[\s\-\(\)\+]/g, '')
+    if (clean.length === 10) clean = '91' + clean
+
+    const currentList = numbers.split('\n').map(n => n.trim()).filter(Boolean)
+    const idx = currentList.indexOf(clean)
+
+    if (idx !== -1) {
+      currentList.splice(idx, 1)
+    } else {
+      currentList.push(clean)
+    }
+    setNumbers(currentList.join('\n'))
+  }
 
   const fetchBroadcasts = async () => {
     setLoadingHistory(true)
@@ -353,22 +413,62 @@ export default function Broadcast() {
               </>
             )}
 
-            {/* Recipients */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                <Users size={14} className="inline mr-1" />
-                Recipients (one phone number per line)
-              </label>
+            {/* Recipients Section */}
+            <div className="space-y-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <label className="block text-sm font-bold text-gray-700">
+                  <Users size={15} className="inline mr-1 text-brand-orange" />
+                  Recipients (Manual Typing or Select From Contacts)
+                </label>
+
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={handleSelectAllContacts}
+                    className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1"
+                    title="Populate all saved contacts into recipients list"
+                  >
+                    <UserCheck size={13} />
+                    <span>Select All Contacts ({contacts.length})</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowContactPicker(true)}
+                    className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-brand-blue border border-blue-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1"
+                  >
+                    <span>Pick Contacts...</span>
+                  </button>
+
+                  {numbers && (
+                    <button
+                      type="button"
+                      onClick={() => setNumbers('')}
+                      className="px-2 py-1 text-xs text-gray-400 hover:text-red-600 transition-colors"
+                      title="Clear list"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+
               <textarea
                 value={numbers}
                 onChange={e => setNumbers(e.target.value)}
-                rows={4}
-                placeholder={`919876543210\n918765432109`}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-blue outline-none resize-none font-mono text-sm"
+                rows={5}
+                placeholder={`Type numbers manually or click "Select All Contacts" above:\n919876543210\n918765432109`}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-blue outline-none resize-none font-mono text-xs sm:text-sm"
               />
-              <p className="text-xs text-gray-400 mt-1">
-                {numbers.split('\n').filter(n => n.trim()).length} recipient(s). Include country code (e.g. 919876543210).
-              </p>
+
+              <div className="flex items-center justify-between text-xs text-gray-500">
+                <span>
+                  <b>{numbers.split('\n').filter(n => n.trim()).length}</b> recipient(s) selected.
+                </span>
+                <span className="text-[11px] text-gray-400">
+                  Include country code (e.g. 919876543210)
+                </span>
+              </div>
             </div>
 
             <button
@@ -513,6 +613,143 @@ export default function Broadcast() {
           </div>
         )}
       </div>
+
+      {/* Contact Picker Modal */}
+      {showContactPicker && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl p-6 space-y-4 animate-in fade-in duration-150 max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div>
+                <h3 className="font-black text-gray-900 text-base">Select Contacts for Broadcast</h3>
+                <p className="text-xs text-gray-500">Pick individual contacts or filter by tag.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowContactPicker(false)}
+                className="text-gray-400 hover:text-gray-600 text-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={15} />
+              <input
+                type="text"
+                value={contactSearch}
+                onChange={e => setContactSearch(e.target.value)}
+                placeholder="Search contact by name or number..."
+                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-xl text-xs outline-none focus:ring-2 focus:ring-brand-blue"
+              />
+            </div>
+
+            {/* Tag Pills */}
+            {(() => {
+              const allTags = ['ALL', ...new Set(contacts.flatMap(c => Array.isArray(c.tags) ? c.tags : []))]
+              if (allTags.length <= 1) return null
+              return (
+                <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto pt-1">
+                  {allTags.map(tag => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => setSelectedTagFilter(tag)}
+                      className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-all ${
+                        selectedTagFilter === tag
+                          ? 'bg-brand-blue text-white shadow-2xs'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              )
+            })()}
+
+            {/* Contacts Checkbox List */}
+            <div className="flex-1 overflow-y-auto divide-y divide-gray-100 border border-gray-200 rounded-2xl p-2 min-h-[200px]">
+              {(() => {
+                const currentNumbersSet = new Set(
+                  numbers.split('\n').map(n => n.trim().replace(/[\s\-\(\)\+]/g, '')).filter(Boolean)
+                )
+
+                const visibleContacts = contacts.filter(c => {
+                  const matchSearch =
+                    c.name?.toLowerCase().includes(contactSearch.toLowerCase()) ||
+                    c.phone?.includes(contactSearch)
+                  const matchTag =
+                    selectedTagFilter === 'ALL' ||
+                    (Array.isArray(c.tags) && c.tags.includes(selectedTagFilter))
+                  return matchSearch && matchTag
+                })
+
+                if (visibleContacts.length === 0) {
+                  return (
+                    <div className="p-8 text-center text-gray-400 text-xs">
+                      No matching contacts found.
+                    </div>
+                  )
+                }
+
+                return visibleContacts.map(c => {
+                  let cleanPhone = String(c.phone).trim().replace(/[\s\-\(\)\+]/g, '')
+                  if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone
+                  const isChecked = currentNumbersSet.has(cleanPhone)
+
+                  return (
+                    <div
+                      key={c.id || cleanPhone}
+                      onClick={() => handleToggleSingleContact(cleanPhone)}
+                      className={`p-2.5 rounded-xl flex items-center justify-between cursor-pointer transition-colors ${
+                        isChecked ? 'bg-blue-50/70' : 'hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {}} // handled by parent div onClick
+                          className="w-4 h-4 text-brand-blue rounded accent-brand-blue cursor-pointer"
+                        />
+                        <div>
+                          <div className="font-bold text-gray-900 text-xs">{c.name}</div>
+                          <div className="font-mono text-[11px] text-gray-500">{c.phone}</div>
+                        </div>
+                      </div>
+
+                      {Array.isArray(c.tags) && c.tags.length > 0 && (
+                        <div className="flex gap-1">
+                          {c.tags.slice(0, 2).map((t, i) => (
+                            <span key={i} className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-[9px] font-bold">
+                              {t}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })
+              })()}
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+              <span className="text-xs font-semibold text-gray-600">
+                Total in Broadcast: <b>{numbers.split('\n').filter(n => n.trim()).length}</b> recipients
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowContactPicker(false)}
+                className="px-5 py-2 bg-brand-blue hover:bg-blue-900 text-white font-bold text-xs rounded-xl shadow-xs transition-all"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

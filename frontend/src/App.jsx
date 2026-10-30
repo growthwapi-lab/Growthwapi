@@ -17,6 +17,7 @@ import Settings from './pages/dashboard/Settings'
 import AdminDashboard from './pages/dashboard/AdminDashboard'
 import AffiliateProgram from './pages/dashboard/AffiliateProgram'
 import AffiliateLanding from './pages/AffiliateLanding'
+import TeamMembers from './pages/dashboard/TeamMembers'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
@@ -46,6 +47,7 @@ function App() {
         <Route path="wallet" element={<Wallet />} />
         <Route path="developer" element={<DeveloperHub />} />
         <Route path="affiliate" element={<AffiliateProgram />} />
+        <Route path="team" element={<TeamMembers />} />
         <Route path="settings" element={<Settings />} />
         <Route path="admin" element={<AdminDashboard />} />
       </Route>

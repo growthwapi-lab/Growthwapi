@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
-import { MessageSquare, Users, Send, BarChart2, Wallet, Settings, LogOut, Menu, X, FileText, Code, Bot, ShieldCheck, Award } from 'lucide-react'
+import { MessageSquare, Users, Send, BarChart2, Wallet, Settings, LogOut, Menu, X, FileText, Code, Bot, ShieldCheck, Award, UserPlus } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../lib/api'
 
@@ -38,20 +38,32 @@ export default function DashboardLayout() {
       .catch(() => {})
   }
 
-  const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: BarChart2, exact: true },
-    { name: 'Inbox', path: '/dashboard/inbox', icon: MessageSquare },
-    { name: 'AI Agent', path: '/dashboard/ai-agent', icon: Bot },
-    { name: 'Contacts', path: '/dashboard/contacts', icon: Users },
-    { name: 'Templates', path: '/dashboard/templates', icon: FileText },
-    { name: 'Broadcast', path: '/dashboard/broadcast', icon: Send },
-    { name: 'Analytics', path: '/dashboard/analytics', icon: BarChart2 },
-    { name: 'Wallet', path: '/dashboard/wallet', icon: Wallet },
-    { name: 'Developer Hub', path: '/dashboard/developer', icon: Code },
-    { name: 'Affiliate Program', path: '/dashboard/affiliate', icon: Award, badge: 'EARN' },
-    { name: 'Settings', path: '/dashboard/settings', icon: Settings },
-    ...(isAdmin ? [{ name: 'Admin Panel', path: '/dashboard/admin', icon: ShieldCheck, badge: 'SUPER' }] : []),
-  ]
+  const isAgent = Boolean(user?.user_metadata?.owner_id || user?.user_metadata?.is_team_member)
+
+  const navItems = isAgent
+    ? [
+        { name: 'Dashboard', path: '/dashboard', icon: BarChart2, exact: true },
+        { name: 'Inbox', path: '/dashboard/inbox', icon: MessageSquare, badge: 'LIVE' },
+        { name: 'Contacts', path: '/dashboard/contacts', icon: Users },
+        { name: 'Templates', path: '/dashboard/templates', icon: FileText },
+        { name: 'Broadcast', path: '/dashboard/broadcast', icon: Send },
+        { name: 'Settings', path: '/dashboard/settings', icon: Settings },
+      ]
+    : [
+        { name: 'Dashboard', path: '/dashboard', icon: BarChart2, exact: true },
+        { name: 'Inbox', path: '/dashboard/inbox', icon: MessageSquare },
+        { name: 'AI Agent', path: '/dashboard/ai-agent', icon: Bot },
+        { name: 'Contacts', path: '/dashboard/contacts', icon: Users },
+        { name: 'Templates', path: '/dashboard/templates', icon: FileText },
+        { name: 'Broadcast', path: '/dashboard/broadcast', icon: Send },
+        { name: 'Team Members', path: '/dashboard/team', icon: UserPlus, badge: activePlan?.plan_type === 'growth' ? '5 SLOTS' : activePlan?.plan_type === 'pro' ? 'UNLIMITED' : '' },
+        { name: 'Analytics', path: '/dashboard/analytics', icon: BarChart2 },
+        { name: 'Wallet', path: '/dashboard/wallet', icon: Wallet },
+        { name: 'Developer Hub', path: '/dashboard/developer', icon: Code },
+        { name: 'Affiliate Program', path: '/dashboard/affiliate', icon: Award, badge: 'EARN' },
+        { name: 'Settings', path: '/dashboard/settings', icon: Settings },
+        ...(isAdmin ? [{ name: 'Admin Panel', path: '/dashboard/admin', icon: ShieldCheck, badge: 'SUPER' }] : []),
+      ]
 
 
   const handleLogout = async () => {

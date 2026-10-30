@@ -4,43 +4,43 @@ const { supabaseAdmin } = require('../config/supabase');
  * EXACT TIERED AFFILIATE COMMISSION MATRIX
  * 
  * Starter Plan (Rs 999):
- *  - Month 1: Rs 300
- *  - Month 2: Rs 150
- *  - Month 3: Rs 75
- *  - Month 4+: Rs 0 (Max 3 months)
+ *  - Month 1: Rs 400
+ *  - Month 2: Rs 200
+ *  - Month 3: Rs 100
+ *  - Month 4+: Rs 0 (Max 3 months, Total Rs 700)
  * 
  * Growth Plan (Rs 2,499):
- *  - Month 1: Rs 500
- *  - Month 2: Rs 250
- *  - Month 3: Rs 125
- *  - Month 4: Rs 75
- *  - Month 5+: Rs 0 (Max 4 months)
+ *  - Month 1: Rs 700
+ *  - Month 2: Rs 350
+ *  - Month 3: Rs 175
+ *  - Month 4: Rs 85
+ *  - Month 5+: Rs 0 (Max 4 months, Total Rs 1,310)
  * 
  * Pro Plan (Rs 5,999):
- *  - Month 1: Rs 1,000
- *  - Month 2: Rs 500
- *  - Month 3: Rs 250
- *  - Month 4: Rs 125
+ *  - Month 1: Rs 1,200
+ *  - Month 2: Rs 600
+ *  - Month 3: Rs 300
+ *  - Month 4: Rs 150
  *  - Month 5: Rs 75
- *  - Month 6+: Rs 0 (Max 5 months)
+ *  - Month 6+: Rs 0 (Max 5 months, Total Rs 2,325)
  */
 const COMMISSION_SCHEDULE = {
   starter: {
-    1: 300,
-    2: 150,
-    3: 75,
+    1: 400,
+    2: 200,
+    3: 100,
   },
   growth: {
-    1: 500,
-    2: 250,
-    3: 125,
-    4: 75,
+    1: 700,
+    2: 350,
+    3: 175,
+    4: 85,
   },
   pro: {
-    1: 1000,
-    2: 500,
-    3: 250,
-    4: 125,
+    1: 1200,
+    2: 600,
+    3: 300,
+    4: 150,
     5: 75,
   }
 };

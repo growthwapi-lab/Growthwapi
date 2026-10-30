@@ -463,7 +463,7 @@ export default function LandingPage() {
                 </span>
                 <Link to="/partner" className="inline-flex items-center gap-1.5 bg-gradient-to-r from-orange-100 to-amber-100 border border-orange-300 text-brand-orange text-xs font-bold px-3 py-1.5 rounded-full hover:shadow-xs transition-all">
                   <span>💰</span>
-                  <span>Earn up to ₹1,950/referral →</span>
+                  <span>Earn up to ₹2,325/referral →</span>
                 </Link>
               </div>
               {/* Headline */}

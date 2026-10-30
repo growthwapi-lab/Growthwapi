@@ -217,7 +217,7 @@ export default function AffiliateProgram() {
               Earn Every Month on Recurring Referrals
             </h1>
             <p className="text-xs sm:text-sm text-orange-100 mt-2 leading-relaxed">
-              Earn up to <b>₹1,000 per referral</b> for the first month + ongoing monthly recurring bonuses. No WhatsApp setup required for partners!
+              Earn up to <b>₹1,200 per referral</b> for the first month + ongoing monthly recurring bonuses. No WhatsApp setup required for partners!
             </p>
           </div>
 
@@ -263,7 +263,7 @@ export default function AffiliateProgram() {
               </h2>
             </div>
             <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-              Bas ek baar <b>₹200</b> one-time activation fee pay karein. Isse aapka referral link verified ho jayega aur aap har client par up to <b>₹1,950</b> recurring commission kamana shuru kar sakte hain with instant UPI withdrawals!
+              Bas ek baar <b>₹200</b> one-time activation fee pay karein. Isse aapka referral link verified ho jayega aur aap har client par up to <b>₹2,325</b> recurring commission kamana shuru kar sakte hain with instant UPI withdrawals!
             </p>
           </div>
 
@@ -407,19 +407,19 @@ export default function AffiliateProgram() {
             <div className="space-y-1.5 text-xs text-gray-600">
               <div className="flex justify-between bg-white p-2 rounded-lg border border-gray-100">
                 <span>Month 1 Commission:</span>
-                <span className="font-bold text-emerald-600">₹300</span>
+                <span className="font-bold text-emerald-600">₹400</span>
               </div>
               <div className="flex justify-between bg-white p-2 rounded-lg border border-gray-100">
                 <span>Month 2 Commission:</span>
-                <span className="font-bold text-emerald-600">₹150</span>
+                <span className="font-bold text-emerald-600">₹200</span>
               </div>
               <div className="flex justify-between bg-white p-2 rounded-lg border border-gray-100">
                 <span>Month 3 Commission:</span>
-                <span className="font-bold text-emerald-600">₹75</span>
+                <span className="font-bold text-emerald-600">₹100</span>
               </div>
             </div>
             <div className="text-[11px] font-semibold text-gray-500 text-center pt-1 border-t border-gray-200">
-              Total Max: <b className="text-gray-900">₹525</b> per client
+              Total Max: <b className="text-gray-900">₹700</b> per client
             </div>
           </div>
 
@@ -435,23 +435,23 @@ export default function AffiliateProgram() {
             <div className="space-y-1.5 text-xs text-gray-600">
               <div className="flex justify-between bg-white p-2 rounded-lg border border-orange-100">
                 <span>Month 1 Commission:</span>
-                <span className="font-bold text-emerald-600">₹500</span>
+                <span className="font-bold text-emerald-600">₹700</span>
               </div>
               <div className="flex justify-between bg-white p-2 rounded-lg border border-orange-100">
                 <span>Month 2 Commission:</span>
-                <span className="font-bold text-emerald-600">₹250</span>
+                <span className="font-bold text-emerald-600">₹350</span>
               </div>
               <div className="flex justify-between bg-white p-2 rounded-lg border border-orange-100">
                 <span>Month 3 Commission:</span>
-                <span className="font-bold text-emerald-600">₹125</span>
+                <span className="font-bold text-emerald-600">₹175</span>
               </div>
               <div className="flex justify-between bg-white p-2 rounded-lg border border-orange-100">
                 <span>Month 4 Commission:</span>
-                <span className="font-bold text-emerald-600">₹75</span>
+                <span className="font-bold text-emerald-600">₹85</span>
               </div>
             </div>
             <div className="text-[11px] font-semibold text-gray-500 text-center pt-1 border-t border-orange-200">
-              Total Max: <b className="text-brand-orange">₹950</b> per client
+              Total Max: <b className="text-brand-orange">₹1,310</b> per client
             </div>
           </div>
 
@@ -464,23 +464,27 @@ export default function AffiliateProgram() {
             <div className="space-y-1.5 text-xs text-gray-600">
               <div className="flex justify-between bg-white p-2 rounded-lg border border-purple-100">
                 <span>Month 1 Commission:</span>
-                <span className="font-bold text-emerald-600">₹1,000</span>
+                <span className="font-bold text-emerald-600">₹1,200</span>
               </div>
               <div className="flex justify-between bg-white p-2 rounded-lg border border-purple-100">
                 <span>Month 2 Commission:</span>
-                <span className="font-bold text-emerald-600">₹500</span>
+                <span className="font-bold text-emerald-600">₹600</span>
               </div>
               <div className="flex justify-between bg-white p-2 rounded-lg border border-purple-100">
                 <span>Month 3 Commission:</span>
-                <span className="font-bold text-emerald-600">₹250</span>
+                <span className="font-bold text-emerald-600">₹300</span>
               </div>
               <div className="flex justify-between bg-white p-2 rounded-lg border border-purple-100">
-                <span>Month 4 & 5 Commission:</span>
-                <span className="font-bold text-emerald-600">₹125 & ₹75</span>
+                <span>Month 4 Commission:</span>
+                <span className="font-bold text-emerald-600">₹150</span>
+              </div>
+              <div className="flex justify-between bg-white p-2 rounded-lg border border-purple-100">
+                <span>Month 5 Commission:</span>
+                <span className="font-bold text-emerald-600">₹75</span>
               </div>
             </div>
             <div className="text-[11px] font-semibold text-gray-500 text-center pt-1 border-t border-purple-200">
-              Total Max: <b className="text-brand-purple">₹1,950</b> per client
+              Total Max: <b className="text-brand-purple">₹2,325</b> per client
             </div>
           </div>
         </div>

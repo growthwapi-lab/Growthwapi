@@ -43,13 +43,13 @@ export default function AffiliateLanding() {
 
   // Calculate projected earnings
   const calculateEarnings = () => {
-    if (selectedPlanTier === 'starter') return clientCount * 525
-    if (selectedPlanTier === 'growth') return clientCount * 950
-    if (selectedPlanTier === 'pro') return clientCount * 1950
+    if (selectedPlanTier === 'starter') return clientCount * 700
+    if (selectedPlanTier === 'growth') return clientCount * 1310
+    if (selectedPlanTier === 'pro') return clientCount * 2325
     // Mixed: 50% Growth, 30% Starter, 20% Pro
-    const starterPart = Math.round(clientCount * 0.3) * 525
-    const growthPart = Math.round(clientCount * 0.5) * 950
-    const proPart = Math.round(clientCount * 0.2) * 1950
+    const starterPart = Math.round(clientCount * 0.3) * 700
+    const growthPart = Math.round(clientCount * 0.5) * 1310
+    const proPart = Math.round(clientCount * 0.2) * 2325
     return starterPart + growthPart + proPart
   }
 
@@ -68,7 +68,7 @@ export default function AffiliateLanding() {
     },
     {
       q: 'Recurring commission ka schedule kaise kaam karta hai?',
-      a: 'Har package ke liye tiered schedule set hai: Starter Plan me pehle 3 mahine (₹300 + ₹150 + ₹75 = ₹525), Growth Plan me pehle 4 mahine (₹500 + ₹250 + ₹125 + ₹75 = ₹950), aur Pro Plan me pehle 5 mahine (₹1000 + ₹500 + ₹250 + ₹125 + ₹75 = ₹1,950 per client).'
+      a: 'Har package ke liye tiered schedule set hai: Starter Plan me pehle 3 mahine (₹400 + ₹200 + ₹100 = ₹700), Growth Plan me pehle 4 mahine (₹700 + ₹350 + ₹175 + ₹85 = ₹1,310), aur Pro Plan me pehle 5 mahine (₹1,200 + ₹600 + ₹300 + ₹150 + ₹75 = ₹2,325 per client).'
     },
     {
       q: 'Agar client plan upgrade kar leta hai toh kya hoga?',
@@ -83,7 +83,7 @@ export default function AffiliateLanding() {
         <span className="bg-brand-orange text-white text-[10px] font-black uppercase px-2 py-0.5 rounded-full">
           NEW
         </span>
-        <span>Growthwapi Partner Program is Live! Earn up to ₹1,950 per referral.</span>
+        <span>Growthwapi Partner Program is Live! Earn up to ₹2,325 per referral.</span>
         <button
           onClick={handleCtaClick}
           className="underline font-bold text-amber-300 hover:text-white transition-colors ml-1 hidden sm:inline"
@@ -138,7 +138,7 @@ export default function AffiliateLanding() {
 
           {/* Main Headline */}
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-gray-900 leading-tight sm:leading-none tracking-tight mb-6">
-            Earn Up To <span className="text-brand-orange">₹1,950</span> Recurring Commission Per Business Client
+            Earn Up To <span className="text-brand-orange">₹2,325</span> Recurring Commission Per Business Client
           </h1>
 
           {/* Subtitle */}
@@ -236,10 +236,10 @@ export default function AffiliateLanding() {
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 {[
-                  { id: 'starter', name: 'Starter Plan', payout: '₹525 / client' },
-                  { id: 'growth', name: 'Growth Plan', payout: '₹950 / client' },
-                  { id: 'pro', name: 'Pro Plan', payout: '₹1,950 / client' },
-                  { id: 'mixed', name: 'Mixed Average', payout: 'Avg ₹1,020' }
+                  { id: 'starter', name: 'Starter Plan', payout: '₹700 / client' },
+                  { id: 'growth', name: 'Growth Plan', payout: '₹1,310 / client' },
+                  { id: 'pro', name: 'Pro Plan', payout: '₹2,325 / client' },
+                  { id: 'mixed', name: 'Mixed Average', payout: 'Avg ₹1,330' }
                 ].map((item) => (
                   <button
                     key={item.id}
@@ -304,21 +304,21 @@ export default function AffiliateLanding() {
                 </span>
                 <span className="text-xs font-bold text-gray-400">₹999 / mo</span>
               </div>
-              <div className="text-2xl font-black text-gray-900 mb-1">₹525 Total</div>
+              <div className="text-2xl font-black text-gray-900 mb-1">₹700 Total</div>
               <p className="text-xs text-gray-500 mb-6">Pehle 3 mahine tak recurring payout</p>
 
               <div className="space-y-2.5 border-t border-gray-100 pt-4 text-xs">
                 <div className="flex justify-between py-1">
                   <span className="text-gray-500">Month 1 (Activation):</span>
-                  <span className="font-extrabold text-emerald-600">₹300</span>
+                  <span className="font-extrabold text-emerald-600">₹400</span>
                 </div>
                 <div className="flex justify-between py-1">
                   <span className="text-gray-500">Month 2 (Renewal):</span>
-                  <span className="font-extrabold text-emerald-600">₹150</span>
+                  <span className="font-extrabold text-emerald-600">₹200</span>
                 </div>
                 <div className="flex justify-between py-1">
                   <span className="text-gray-500">Month 3 (Renewal):</span>
-                  <span className="font-extrabold text-emerald-600">₹75</span>
+                  <span className="font-extrabold text-emerald-600">₹100</span>
                 </div>
                 <div className="flex justify-between py-1 text-gray-400">
                   <span>Month 4 onwards:</span>
@@ -328,7 +328,7 @@ export default function AffiliateLanding() {
             </div>
 
             <div className="mt-8 pt-4 border-t border-gray-100 text-center">
-              <span className="text-[11px] font-bold text-gray-400">Overall 52.5% of first month price</span>
+              <span className="text-[11px] font-bold text-gray-400">Overall 70% of first month price</span>
             </div>
           </div>
 
@@ -344,25 +344,25 @@ export default function AffiliateLanding() {
                 </span>
                 <span className="text-xs font-bold text-gray-500">₹2,499 / mo</span>
               </div>
-              <div className="text-3xl font-black text-gray-900 mb-1">₹950 Total</div>
+              <div className="text-3xl font-black text-gray-900 mb-1">₹1,310 Total</div>
               <p className="text-xs text-gray-500 mb-6">Pehle 4 mahine tak recurring payout</p>
 
               <div className="space-y-2.5 border-t border-orange-100 pt-4 text-xs">
                 <div className="flex justify-between py-1">
                   <span className="text-gray-600">Month 1 (Activation):</span>
-                  <span className="font-extrabold text-emerald-600">₹500</span>
+                  <span className="font-extrabold text-emerald-600">₹700</span>
                 </div>
                 <div className="flex justify-between py-1">
                   <span className="text-gray-600">Month 2 (Renewal):</span>
-                  <span className="font-extrabold text-emerald-600">₹250</span>
+                  <span className="font-extrabold text-emerald-600">₹350</span>
                 </div>
                 <div className="flex justify-between py-1">
                   <span className="text-gray-600">Month 3 (Renewal):</span>
-                  <span className="font-extrabold text-emerald-600">₹125</span>
+                  <span className="font-extrabold text-emerald-600">₹175</span>
                 </div>
                 <div className="flex justify-between py-1">
                   <span className="text-gray-600">Month 4 (Renewal):</span>
-                  <span className="font-extrabold text-emerald-600">₹75</span>
+                  <span className="font-extrabold text-emerald-600">₹85</span>
                 </div>
                 <div className="flex justify-between py-1 text-gray-400">
                   <span>Month 5 onwards:</span>
@@ -385,25 +385,25 @@ export default function AffiliateLanding() {
                 </span>
                 <span className="text-xs font-bold text-gray-400">₹5,999 / mo</span>
               </div>
-              <div className="text-2xl font-black text-gray-900 mb-1">₹1,950 Total</div>
+              <div className="text-2xl font-black text-gray-900 mb-1">₹2,325 Total</div>
               <p className="text-xs text-gray-500 mb-6">Pehle 5 mahine tak recurring payout</p>
 
               <div className="space-y-2.5 border-t border-gray-100 pt-4 text-xs">
                 <div className="flex justify-between py-1">
                   <span className="text-gray-500">Month 1 (Activation):</span>
-                  <span className="font-extrabold text-emerald-600">₹1,000</span>
+                  <span className="font-extrabold text-emerald-600">₹1,200</span>
                 </div>
                 <div className="flex justify-between py-1">
                   <span className="text-gray-500">Month 2 (Renewal):</span>
-                  <span className="font-extrabold text-emerald-600">₹500</span>
+                  <span className="font-extrabold text-emerald-600">₹600</span>
                 </div>
                 <div className="flex justify-between py-1">
                   <span className="text-gray-500">Month 3 (Renewal):</span>
-                  <span className="font-extrabold text-emerald-600">₹250</span>
+                  <span className="font-extrabold text-emerald-600">₹300</span>
                 </div>
                 <div className="flex justify-between py-1">
                   <span className="text-gray-500">Month 4 (Renewal):</span>
-                  <span className="font-extrabold text-emerald-600">₹125</span>
+                  <span className="font-extrabold text-emerald-600">₹150</span>
                 </div>
                 <div className="flex justify-between py-1">
                   <span className="text-gray-500">Month 5 (Renewal):</span>

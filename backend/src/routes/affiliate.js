@@ -260,8 +260,8 @@ router.post('/request-payout', auth, async (req, res) => {
     const { amount, method = 'upi' } = req.body;
     const requestedAmount = Number(amount);
 
-    if (!requestedAmount || requestedAmount < 500) {
-      return res.status(400).json({ error: 'Minimum payout withdrawal amount is Rs 500.' });
+    if (!requestedAmount || requestedAmount < 400) {
+      return res.status(400).json({ error: 'Minimum payout withdrawal amount is Rs 400.' });
     }
 
     const { data: profile } = await supabaseAdmin

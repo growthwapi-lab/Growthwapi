@@ -64,7 +64,7 @@ export default function AffiliateLanding() {
     },
     {
       q: 'Mujhe commission kab aur kaise milega?',
-      a: 'Jaise hi aapka refer kiya hua client subscription renew ya buy karta hai, commission turant aapke partner wallet me credit ho jata hai. Jaise hi aapka balance ₹500 ya usse jyada hota hai, aap 1-click me apne UPI ID (GPay, PhonePe, Paytm) ya Bank Account me payout request bhej sakte hain jo 24 hours ke andar process ho jata hai.'
+      a: 'Jaise hi aapka refer kiya hua client subscription renew ya buy karta hai, commission turant aapke partner wallet me credit ho jata hai. Jaise hi aapka balance ₹400 ya usse jyada hota hai, aap 1-click me apne UPI ID (GPay, PhonePe, Paytm) ya Bank Account me payout request bhej sakte hain jo 24 hours ke andar process ho jata hai.'
     },
     {
       q: 'Recurring commission ka schedule kaise kaam karta hai?',
@@ -449,7 +449,7 @@ export default function AffiliateLanding() {
               {
                 step: '04',
                 title: 'Withdraw via UPI',
-                desc: 'Client subscribe karega toh wallet me commission add hoga. ₹500 hote hi direct UPI ya Bank me withdrawal lein.'
+                desc: 'Client subscribe karega toh wallet me commission add hoga. ₹400 hote hi direct UPI ya Bank me withdrawal lein.'
               }
             ].map((st) => (
               <div key={st.step} className="bg-white p-6 rounded-3xl border border-gray-200 shadow-2xs space-y-3">

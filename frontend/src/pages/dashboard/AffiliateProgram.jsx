@@ -120,8 +120,8 @@ export default function AffiliateProgram() {
   const handleRequestPayout = async (e) => {
     e.preventDefault()
     const amt = Number(payoutAmount)
-    if (!amt || amt < 500) {
-      return toast.error('Minimum payout request is ₹500.')
+    if (!amt || amt < 400) {
+      return toast.error('Minimum payout request is ₹400.')
     }
     if (amt > Number(profile?.pending_balance || 0)) {
       return toast.error('Requested amount exceeds available balance.')
@@ -326,10 +326,10 @@ export default function AffiliateProgram() {
           <div className="pt-1">
             <button
               onClick={() => setShowPayoutModal(true)}
-              disabled={Number(profile?.pending_balance || 0) < 500}
-              className="w-full py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold rounded-lg transition-colors shadow-2xs"
+              disabled={Number(profile?.pending_balance || 0) < 400}
+              className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all shadow-2xs"
             >
-              Request Withdrawal
+              Request Withdrawal (Min ₹400)
             </button>
           </div>
         </div>
@@ -374,14 +374,69 @@ export default function AffiliateProgram() {
             {referrals.length}
           </div>
           <div className="text-xs text-gray-500 flex justify-between">
-            <span>Clicks: <b>{profile?.total_clicks || 0}</b></span>
-            <button
-              onClick={() => setShowSettingsModal(true)}
-              className="text-brand-blue font-bold hover:underline"
-            >
-              Payout Settings →
-            </button>
+            <span>Link Clicks: <b>{profile?.total_clicks || 0}</b></span>
+            <span>Clients: <b>{referrals.length}</b></span>
           </div>
+        </div>
+      </div>
+
+      {/* Prominent Payout Receiving Accounts Card (UPI / Bank) */}
+      <div className="bg-white rounded-3xl border border-gray-200 p-5 sm:p-6 shadow-2xs">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-brand-blue/10 text-brand-blue rounded-2xl shrink-0">
+              <CreditCard size={24} />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="font-extrabold text-gray-900 text-sm sm:text-base">
+                  Payout Receiving Accounts (UPI & Bank Details)
+                </h3>
+                {(profile?.upi_id || profile?.bank_account_number) ? (
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold flex items-center gap-1">
+                    <CheckCircle2 size={11} /> Saved & Active
+                  </span>
+                ) : (
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold flex items-center gap-1 animate-pulse">
+                    <AlertCircle size={11} /> Add UPI / Bank to Withdraw
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Aapka commission is UPI ID ya Bank Account me direct transfer kiya jayega.
+              </p>
+
+              <div className="flex flex-wrap items-center gap-3 mt-3 text-xs">
+                <div className="bg-gray-50 border border-gray-200 px-3.5 py-2 rounded-xl flex items-center gap-2 font-mono">
+                  <span className="text-gray-400 font-sans font-bold">UPI ID:</span>
+                  {profile?.upi_id ? (
+                    <span className="font-bold text-gray-900">{profile.upi_id}</span>
+                  ) : (
+                    <span className="text-amber-600 font-bold">Not Added Yet</span>
+                  )}
+                </div>
+
+                <div className="bg-gray-50 border border-gray-200 px-3.5 py-2 rounded-xl flex items-center gap-2 font-mono">
+                  <span className="text-gray-400 font-sans font-bold">Bank A/C:</span>
+                  {profile?.bank_account_number ? (
+                    <span className="font-bold text-gray-900">
+                      ••••{profile.bank_account_number.slice(-4)} ({profile.bank_ifsc})
+                    </span>
+                  ) : (
+                    <span className="text-gray-400">Not Added</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setShowSettingsModal(true)}
+            className="w-full md:w-auto px-6 py-3 bg-brand-blue hover:bg-blue-700 text-white text-xs sm:text-sm font-extrabold rounded-2xl transition-all shadow-md shadow-blue-100 shrink-0 flex items-center justify-center gap-2"
+          >
+            <CreditCard size={16} />
+            <span>{(profile?.upi_id || profile?.bank_account_number) ? 'Edit UPI / Bank Details' : '➕ Add UPI / Bank Details'}</span>
+          </button>
         </div>
       </div>
 
@@ -624,11 +679,11 @@ export default function AffiliateProgram() {
                 <label className="block text-xs font-bold text-gray-700 mb-1">Withdrawal Amount (₹)</label>
                 <input
                   type="number"
-                  min="500"
+                  min="400"
                   max={Number(profile?.pending_balance || 0)}
                   value={payoutAmount}
                   onChange={e => setPayoutAmount(e.target.value)}
-                  placeholder="Min ₹500"
+                  placeholder="Min ₹400"
                   className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none"
                   required
                 />
@@ -655,6 +710,45 @@ export default function AffiliateProgram() {
                   >
                     Bank NEFT / IMPS
                   </button>
+                </div>
+
+                {/* Account preview or setup button */}
+                <div className="mt-2 text-xs">
+                  {payoutMethod === 'upi' ? (
+                    profile?.upi_id ? (
+                      <div className="p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800">
+                        Transfer to UPI: <b>{profile.upi_id}</b>
+                      </div>
+                    ) : (
+                      <div className="p-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 flex items-center justify-between">
+                        <span>⚠️ UPI ID add nahi hai</span>
+                        <button
+                          type="button"
+                          onClick={() => { setShowPayoutModal(false); setShowSettingsModal(true) }}
+                          className="font-bold underline text-brand-blue"
+                        >
+                          + Add UPI ID
+                        </button>
+                      </div>
+                    )
+                  ) : (
+                    profile?.bank_account_number ? (
+                      <div className="p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800">
+                        Transfer to Bank: <b>••••{profile.bank_account_number.slice(-4)}</b> ({profile.bank_ifsc})
+                      </div>
+                    ) : (
+                      <div className="p-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 flex items-center justify-between">
+                        <span>⚠️ Bank A/C add nahi hai</span>
+                        <button
+                          type="button"
+                          onClick={() => { setShowPayoutModal(false); setShowSettingsModal(true) }}
+                          className="font-bold underline text-brand-blue"
+                        >
+                          + Add Bank Details
+                        </button>
+                      </div>
+                    )
+                  )}
                 </div>
               </div>
 

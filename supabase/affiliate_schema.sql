@@ -19,10 +19,18 @@ CREATE TABLE IF NOT EXISTS public.affiliate_profiles (
   pending_balance NUMERIC(10,2) NOT NULL DEFAULT 0.00,
   paid_balance NUMERIC(10,2) NOT NULL DEFAULT 0.00,
   total_clicks INTEGER NOT NULL DEFAULT 0,
-  is_approved BOOLEAN NOT NULL DEFAULT TRUE,
+  is_approved BOOLEAN NOT NULL DEFAULT FALSE,
+  is_paid_member BOOLEAN NOT NULL DEFAULT FALSE,
+  payment_id TEXT,
+  paid_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Idempotent column additions for existing tables
+ALTER TABLE public.affiliate_profiles ADD COLUMN IF NOT EXISTS is_paid_member BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE public.affiliate_profiles ADD COLUMN IF NOT EXISTS payment_id TEXT;
+ALTER TABLE public.affiliate_profiles ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ;
 
 -- 2. AFFILIATE REFERRALS (Tracks which client signed up under which affiliate)
 CREATE TABLE IF NOT EXISTS public.affiliate_referrals (

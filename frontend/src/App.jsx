@@ -16,12 +16,16 @@ import DeveloperHub from './pages/dashboard/DeveloperHub'
 import Settings from './pages/dashboard/Settings'
 import AdminDashboard from './pages/dashboard/AdminDashboard'
 import AffiliateProgram from './pages/dashboard/AffiliateProgram'
+import AffiliateLanding from './pages/AffiliateLanding'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
+      <Route path="/partner" element={<AffiliateLanding />} />
+      <Route path="/earn" element={<AffiliateLanding />} />
+      <Route path="/affiliate-program" element={<AffiliateLanding />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />

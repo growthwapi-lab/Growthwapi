@@ -16,10 +16,23 @@ import {
   Building,
   CreditCard,
   Send,
-  AlertCircle
+  AlertCircle,
+  Lock,
+  ExternalLink
 } from 'lucide-react'
 import api from '../../lib/api'
 import toast from 'react-hot-toast'
+
+function loadRazorpay() {
+  return new Promise(resolve => {
+    if (window.Razorpay) return resolve(true)
+    const script = document.createElement('script')
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js'
+    script.onload = () => resolve(true)
+    script.onerror = () => resolve(false)
+    document.body.appendChild(script)
+  })
+}
 
 export default function AffiliateProgram() {
   const [loading, setLoading] = useState(true)
@@ -131,6 +144,55 @@ export default function AffiliateProgram() {
     }
   }
 
+  const [activating, setActivating] = useState(false)
+
+  const handleActivatePartner = async () => {
+    setActivating(true)
+    const loaded = await loadRazorpay()
+    if (!loaded) {
+      toast.error('Payment gateway failed to load. Check internet connection.')
+      setActivating(false)
+      return
+    }
+
+    try {
+      const { data: order } = await api.post('/api/affiliate/create-activation-order')
+      const options = {
+        key: order.key_id || import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: order.amount,
+        currency: order.currency,
+        name: 'Growthwapi',
+        description: 'Affiliate Partner Lifetime Activation',
+        order_id: order.id,
+        handler: async (response) => {
+          try {
+            await api.post('/api/affiliate/verify-activation', {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            })
+            toast.success('🎉 Partner account activated successfully! Welcome to VIP Partners.')
+            fetchAffiliateDashboard()
+          } catch (err) {
+            toast.error(err.response?.data?.error || 'Payment verification failed.')
+          }
+        },
+        prefill: {
+          name: profile?.user?.name || 'Partner',
+          email: profile?.user?.email || ''
+        },
+        theme: { color: '#F97316' },
+      }
+      const rzp = new window.Razorpay(options)
+      rzp.on('payment.failed', () => toast.error('Payment failed. Please try again.'))
+      rzp.open()
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Could not initiate activation payment.')
+    } finally {
+      setActivating(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
@@ -160,7 +222,18 @@ export default function AffiliateProgram() {
           </div>
 
           <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 flex flex-col gap-2 shrink-0">
-            <span className="text-[11px] font-bold text-orange-100 uppercase tracking-wider">Your Partner Code</span>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[11px] font-bold text-orange-100 uppercase tracking-wider">Your Partner Code</span>
+              {profile?.is_paid_member ? (
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-100 border border-emerald-300/30 text-[10px] font-bold inline-flex items-center gap-1">
+                  <CheckCircle2 size={11} /> VIP Active
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-100 border border-amber-300/30 text-[10px] font-bold inline-flex items-center gap-1">
+                  <AlertCircle size={11} /> ₹200 Pending
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <span className="font-mono text-lg font-black text-white bg-black/20 px-3 py-1 rounded-xl tracking-wider">
                 {referralCode}
@@ -176,6 +249,40 @@ export default function AffiliateProgram() {
           </div>
         </div>
       </div>
+
+      {/* Activation Paywall Banner if not yet paid */}
+      {!profile?.is_paid_member && (
+        <div className="bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border-2 border-brand-orange/40 rounded-3xl p-6 sm:p-7 shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+          <div className="space-y-1.5 max-w-xl">
+            <div className="flex items-center gap-2">
+              <span className="p-2 bg-brand-orange text-white rounded-xl shadow-xs">
+                <Sparkles size={18} />
+              </span>
+              <h2 className="text-lg font-black text-gray-900">
+                Activate Your Partner Account — ₹200 One-time Lifetime Fee
+              </h2>
+            </div>
+            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+              Bas ek baar <b>₹200</b> one-time activation fee pay karein. Isse aapka referral link verified ho jayega aur aap har client par up to <b>₹1,950</b> recurring commission kamana shuru kar sakte hain with instant UPI withdrawals!
+            </p>
+          </div>
+
+          <button
+            onClick={handleActivatePartner}
+            disabled={activating}
+            className="w-full md:w-auto px-7 py-4 bg-brand-orange hover:bg-orange-600 text-white font-black text-sm rounded-2xl shadow-xl shadow-orange-300 transition-all transform hover:scale-105 shrink-0 flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            {activating ? (
+              <span>Opening Payment Gateway...</span>
+            ) : (
+              <>
+                <span>Pay ₹200 & Activate Partner Account</span>
+                <ArrowRight size={16} />
+              </>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* Referral Link Sharing Bar */}
       <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-2xs space-y-3">

@@ -412,10 +412,14 @@ export default function LandingPage() {
             <a href="/" className="flex items-center">
               <img src="/logo.png.png" alt="Growthwapi" className="h-10 md:h-12 object-contain" />
             </a>
-            <div className="hidden md:flex items-center gap-8">
+            <div className="hidden md:flex items-center gap-6">
               {['Features','Pricing','FAQ'].map(l => (
                 <a key={l} href={`#${l.toLowerCase()}`} className="text-[#1E3A5F] hover:text-[#F97316] font-medium transition-colors">{l}</a>
               ))}
+              <Link to="/partner" className="text-brand-orange font-extrabold flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-orange-50 border border-orange-200 transition-all text-xs sm:text-sm shadow-2xs">
+                <span>💰</span>
+                <span>Earn Now</span>
+              </Link>
               <Link to="/login" className="border border-[#1E3A5F] text-[#1E3A5F] px-4 py-2 rounded-lg font-medium hover:bg-[#1E3A5F] hover:text-white transition-all">
                 Login
               </Link>
@@ -433,6 +437,10 @@ export default function LandingPage() {
           {/* Mobile menu */}
           {mobileOpen && (
             <div className="md:hidden bg-white border-t border-gray-100 px-6 pb-4 space-y-3">
+              <Link to="/partner" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 py-2 text-brand-orange font-bold">
+                <span>💰</span>
+                <span>Earn Now (Partner Program)</span>
+              </Link>
               {['Features','Pricing','FAQ'].map(l => (
                 <a key={l} href={`#${l.toLowerCase()}`} onClick={() => setMobileOpen(false)} className="block py-2 text-[#1E3A5F] font-medium">{l}</a>
               ))}
@@ -448,11 +456,15 @@ export default function LandingPage() {
             {/* Text */}
             <div>
               {/* Badge */}
-              <div className={`transition-all duration-600 ease-out ${heroVisible || prefersReduced ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+              <div className={`flex flex-wrap items-center gap-2 mb-4 transition-all duration-600 ease-out ${heroVisible || prefersReduced ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
                 style={{ transitionDelay: '0ms' }}>
-                <span className="inline-flex items-center gap-2 bg-orange-50 border border-orange-200 text-[#F97316] text-sm font-semibold px-4 py-2 rounded-full mb-6">
+                <span className="inline-flex items-center gap-2 bg-orange-50 border border-orange-200 text-[#F97316] text-sm font-semibold px-4 py-1.5 rounded-full">
                   <span>✦</span> Official WhatsApp Business API
                 </span>
+                <Link to="/partner" className="inline-flex items-center gap-1.5 bg-gradient-to-r from-orange-100 to-amber-100 border border-orange-300 text-brand-orange text-xs font-bold px-3 py-1.5 rounded-full hover:shadow-xs transition-all">
+                  <span>💰</span>
+                  <span>Earn up to ₹1,950/referral →</span>
+                </Link>
               </div>
               {/* Headline */}
               <div className={`transition-all duration-600 ease-out ${heroVisible || prefersReduced ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
@@ -729,6 +741,7 @@ export default function LandingPage() {
               <div>
                 <h4 className="text-white font-bold mb-4">Platform</h4>
                 <ul className="space-y-2 text-gray-400 text-sm">
+                  <li><Link to="/partner" className="text-[#F97316] font-bold hover:underline transition-colors">Affiliate & Partner Program 💰</Link></li>
                   <li><a href="#features" className="hover:text-[#F97316] transition-colors">Features</a></li>
                   <li><a href="#pricing" className="hover:text-[#F97316] transition-colors">Pricing</a></li>
                   <li><a href="#faq" className="hover:text-[#F97316] transition-colors">FAQ</a></li>

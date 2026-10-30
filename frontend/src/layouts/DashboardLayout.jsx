@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
-import { MessageSquare, Users, Send, BarChart2, Wallet, Settings, LogOut, Menu, X, FileText, Code, Bot, ShieldCheck } from 'lucide-react'
+import { MessageSquare, Users, Send, BarChart2, Wallet, Settings, LogOut, Menu, X, FileText, Code, Bot, ShieldCheck, Award } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../lib/api'
 
@@ -48,6 +48,7 @@ export default function DashboardLayout() {
     { name: 'Analytics', path: '/dashboard/analytics', icon: BarChart2 },
     { name: 'Wallet', path: '/dashboard/wallet', icon: Wallet },
     { name: 'Developer Hub', path: '/dashboard/developer', icon: Code },
+    { name: 'Affiliate Program', path: '/dashboard/affiliate', icon: Award, badge: 'EARN' },
     { name: 'Settings', path: '/dashboard/settings', icon: Settings },
     ...(isAdmin ? [{ name: 'Admin Panel', path: '/dashboard/admin', icon: ShieldCheck, badge: 'SUPER' }] : []),
   ]

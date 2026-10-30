@@ -408,4 +408,127 @@ router.get('/system-health', async (req, res) => {
   res.json(health);
 });
 
+// 10. Get All Affiliate Partners & Payouts (Admin View)
+router.get('/affiliates', async (req, res) => {
+  try {
+    const { data: profiles, error: pErr } = await supabaseAdmin
+      .from('affiliate_profiles')
+      .select('*')
+      .order('total_earnings', { ascending: false });
+
+    if (pErr) throw pErr;
+
+    const { data: users } = await supabaseAdmin
+      .from('users')
+      .select('id, name, email, phone');
+
+    const userMap = {};
+    users?.forEach(u => { userMap[u.id] = u; });
+
+    // Fetch referral counts
+    const { data: referrals } = await supabaseAdmin
+      .from('affiliate_referrals')
+      .select('affiliate_user_id, status');
+
+    const refCountMap = {};
+    referrals?.forEach(r => {
+      refCountMap[r.affiliate_user_id] = (refCountMap[r.affiliate_user_id] || 0) + 1;
+    });
+
+    const enrichedProfiles = (profiles || []).map(p => ({
+      ...p,
+      user: userMap[p.user_id] || { name: 'Partner', email: 'unknown' },
+      referralCount: refCountMap[p.user_id] || 0
+    }));
+
+    // Fetch all payouts
+    const { data: payouts } = await supabaseAdmin
+      .from('affiliate_payouts')
+      .select('*')
+      .order('requested_at', { ascending: false });
+
+    const enrichedPayouts = (payouts || []).map(po => ({
+      ...po,
+      user: userMap[po.affiliate_user_id] || { name: 'Partner', email: 'unknown' }
+    }));
+
+    res.json({
+      affiliates: enrichedProfiles,
+      payouts: enrichedPayouts
+    });
+  } catch (err) {
+    console.error('Admin affiliates error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 11. Process Affiliate Payout (Approve & Mark Paid)
+router.patch('/payouts/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, transaction_ref, admin_notes } = req.body;
+
+    const { data: payout, error: pErr } = await supabaseAdmin
+      .from('affiliate_payouts')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (pErr || !payout) {
+      return res.status(404).json({ error: 'Payout request not found' });
+    }
+
+    const { data: updatedPayout, error: upErr } = await supabaseAdmin
+      .from('affiliate_payouts')
+      .update({
+        status: status || 'completed',
+        transaction_ref: transaction_ref || null,
+        admin_notes: admin_notes || null,
+        processed_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (upErr) throw upErr;
+
+    // If marked completed, add to paid_balance in affiliate_profiles
+    if (status === 'completed' && payout.status !== 'completed') {
+      const { data: profile } = await supabaseAdmin
+        .from('affiliate_profiles')
+        .select('paid_balance')
+        .eq('user_id', payout.affiliate_user_id)
+        .single();
+
+      if (profile) {
+        const newPaid = Number(profile.paid_balance || 0) + Number(payout.amount);
+        await supabaseAdmin
+          .from('affiliate_profiles')
+          .update({ paid_balance: newPaid })
+          .eq('user_id', payout.affiliate_user_id);
+      }
+    } else if (status === 'rejected' && payout.status !== 'rejected') {
+      // Refund back to pending_balance if rejected
+      const { data: profile } = await supabaseAdmin
+        .from('affiliate_profiles')
+        .select('pending_balance')
+        .eq('user_id', payout.affiliate_user_id)
+        .single();
+
+      if (profile) {
+        const newPending = Number(profile.pending_balance || 0) + Number(payout.amount);
+        await supabaseAdmin
+          .from('affiliate_profiles')
+          .update({ pending_balance: newPending })
+          .eq('user_id', payout.affiliate_user_id);
+      }
+    }
+
+    res.json({ success: true, payout: updatedPayout });
+  } catch (err) {
+    console.error('Admin payout update error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

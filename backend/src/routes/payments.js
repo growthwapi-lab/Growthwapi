@@ -4,6 +4,7 @@ const razorpay = require('../config/razorpay');
 const auth = require('../middleware/auth');
 const { supabaseAdmin } = require('../config/supabase');
 const { getActiveSubscription, PLAN_QUOTAS, hasActiveSubscription } = require('../utils/trialLimits');
+const { processSubscriptionAffiliateCommission } = require('../utils/affiliateEngine');
 
 const router = express.Router();
 
@@ -155,6 +156,11 @@ router.post('/verify-payment', auth, async (req, res) => {
         console.error('User update error:', userError);
         throw userError;
       }
+
+      // 4. Non-blocking trigger: Calculate and credit tiered affiliate commission
+      processSubscriptionAffiliateCommission(req.user.id, planType, subscription.id).catch(err => {
+        console.error('Background affiliate commission processing error:', err);
+      });
 
       return res.json({
         success: true,

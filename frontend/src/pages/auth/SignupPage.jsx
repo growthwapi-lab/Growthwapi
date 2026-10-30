@@ -1,17 +1,32 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
+import api from '../../lib/api'
 
 export default function SignupPage() {
+  const [searchParams] = useSearchParams()
+  const referralParam = searchParams.get('ref') || ''
+
   const [formData, setFormData] = useState({
     fullName: '',
     businessName: '',
     phone: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    referralCode: referralParam.toUpperCase()
   })
+
+  // If URL has ?ref=CODE, save in localStorage & track click
+  useEffect(() => {
+    const code = referralParam || localStorage.getItem('gw_referral_code') || ''
+    if (code) {
+      localStorage.setItem('gw_referral_code', code.toUpperCase())
+      setFormData(prev => ({ ...prev, referralCode: code.toUpperCase() }))
+      api.post('/api/affiliate/track-click', { code }).catch(() => {})
+    }
+  }, [referralParam])
   const [loading, setLoading] = useState(false)
   const { signUp } = useAuth()
   const navigate = useNavigate()
@@ -60,8 +75,10 @@ export default function SignupPage() {
         full_name: formData.fullName.trim(),
         name: formData.fullName.trim(),
         business_name: formData.businessName.trim(),
-        phone: formattedPhone
+        phone: formattedPhone,
+        referral_code: formData.referralCode ? formData.referralCode.trim().toUpperCase() : undefined
       })
+      localStorage.removeItem('gw_referral_code')
       toast.success('Account created successfully!')
       navigate('/dashboard')
     } catch (error) {
@@ -147,6 +164,23 @@ export default function SignupPage() {
               type="password" name="confirmPassword" required minLength="6"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue outline-none"
               value={formData.confirmPassword} onChange={handleChange}
+            />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-semibold text-gray-600">Referral / Partner Code (Optional)</label>
+              {formData.referralCode && (
+                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                  Partner Applied ✨
+                </span>
+              )}
+            </div>
+            <input
+              type="text" name="referralCode"
+              placeholder="e.g. GW-PARTNER-123"
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-purple outline-none uppercase font-mono text-xs"
+              value={formData.referralCode} onChange={handleChange}
             />
           </div>
           

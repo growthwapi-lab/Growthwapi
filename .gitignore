@@ -4,3 +4,6 @@ dist/
 build/
 .DS_Store
 *.log
+GROWTHWAPI_MASTER_ACCESS_VAULT.md
+*.pdf
+backend/generate_pricing_pdf.js

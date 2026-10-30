@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
+import api from '../lib/api'
 
 // ─── Animation hook: triggers when element enters viewport ───
 function useInView(threshold = 0.2) {
@@ -308,6 +309,18 @@ function Marquee() {
 
 // ─── MAIN COMPONENT ───
 export default function LandingPage() {
+  const [searchParams] = useSearchParams()
+  const refCode = searchParams.get('ref')
+
+  // Capture referral code from URL and persist in localStorage + track click
+  useEffect(() => {
+    if (refCode) {
+      const cleanCode = refCode.trim().toUpperCase()
+      localStorage.setItem('gw_referral_code', cleanCode)
+      api.post('/api/affiliate/track-click', { code: cleanCode }).catch(() => {})
+    }
+  }, [refCode])
+
   const [preloaderDone, setPreloaderDone] = useState(false)
   const [showPreloader, setShowPreloader] = useState(false)
   const [scrolled, setScrolled] = useState(false)

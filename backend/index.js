@@ -10,6 +10,7 @@ const contactsRoutes = require('./src/routes/contacts');
 const developerRoutes = require('./src/routes/developer');
 const aiAgentRoutes = require('./src/routes/aiAgent');
 const adminRoutes = require('./src/routes/admin');
+const affiliateRoutes = require('./src/routes/affiliate');
 
 const app = express();
 
@@ -50,6 +51,7 @@ app.use('/api/contacts', contactsRoutes);
 app.use('/api/developer', developerRoutes);
 app.use('/api/ai-agent', aiAgentRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/affiliate', affiliateRoutes);
 app.use('/api', developerRoutes);
 
 

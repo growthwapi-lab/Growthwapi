@@ -26,7 +26,8 @@ import {
   Copy,
   Plus,
   ExternalLink,
-  ChevronRight
+  ChevronRight,
+  Award
 } from 'lucide-react'
 import api from '../../lib/api'
 import toast from 'react-hot-toast'
@@ -41,6 +42,11 @@ export default function AdminDashboard() {
   const [clients, setClients] = useState([])
   const [subscriptions, setSubscriptions] = useState([])
   const [health, setHealth] = useState(null)
+  const [affiliates, setAffiliates] = useState([])
+  const [payouts, setPayouts] = useState([])
+  const [selectedPayout, setSelectedPayout] = useState(null)
+  const [payoutModal, setPayoutModal] = useState(false)
+  const [payoutForm, setPayoutForm] = useState({ status: 'completed', transaction_ref: '', admin_notes: '' })
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState('')
@@ -80,6 +86,14 @@ export default function AdminDashboard() {
       setClients(cRes.data || [])
       setSubscriptions(sRes.data || [])
       setHealth(hRes.data)
+
+      try {
+        const aRes = await api.get('/api/admin/affiliates')
+        setAffiliates(aRes.data?.affiliates || [])
+        setPayouts(aRes.data?.payouts || [])
+      } catch (aErr) {
+        console.warn('Affiliate data not yet available or schema not run:', aErr.message)
+      }
     } catch (err) {
       console.error('Failed to load admin data:', err)
       toast.error(err.response?.data?.error || 'Failed to fetch admin data. Check permissions.')
@@ -159,6 +173,24 @@ export default function AdminDashboard() {
       fetchAdminData(true)
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to update WhatsApp IDs.')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  // Handle Affiliate Payout Approval / Rejection
+  const handleProcessPayout = async (e) => {
+    e?.preventDefault()
+    if (!selectedPayout) return
+    setActionLoading(true)
+    try {
+      await api.patch(`/api/admin/payouts/${selectedPayout.id}`, payoutForm)
+      toast.success(`Payout marked as ${payoutForm.status}!`)
+      setPayoutModal(false)
+      setSelectedPayout(null)
+      fetchAdminData(true)
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to update payout')
     } finally {
       setActionLoading(false)
     }
@@ -298,6 +330,7 @@ export default function AdminDashboard() {
         {[
           { id: 'clients', label: 'All Clients', count: clients.length, icon: Users },
           { id: 'billing', label: 'Subscriptions & Orders', count: subscriptions.length, icon: CreditCard },
+          { id: 'affiliates', label: 'Affiliates & Payouts', count: payouts.filter(p => p.status === 'pending').length, icon: Award },
           { id: 'health', label: 'System Health & Integrations', icon: Activity },
         ].map(tab => (
           <button
@@ -726,6 +759,218 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* TAB 4: AFFILIATES & PAYOUTS */}
+      {activeTab === 'affiliates' && (
+        <div className="space-y-6">
+          {/* Top Metric Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-2xs">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Total Affiliates</span>
+                <div className="p-2 bg-purple-50 text-brand-purple rounded-xl">
+                  <Award size={18} />
+                </div>
+              </div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-gray-900">{affiliates.length}</div>
+              <p className="text-xs text-gray-500 mt-2">Registered partner promoters</p>
+            </div>
+
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-2xs">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Total Earned</span>
+                <div className="p-2 bg-blue-50 text-brand-blue rounded-xl">
+                  <TrendingUp size={18} />
+                </div>
+              </div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-gray-900">
+                ₹{affiliates.reduce((sum, a) => sum + Number(a.total_earnings || 0), 0).toLocaleString()}
+              </div>
+              <p className="text-xs text-gray-500 mt-2">Lifetime commission generated</p>
+            </div>
+
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-2xs">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Paid Out</span>
+                <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+                  <CheckCircle2 size={18} />
+                </div>
+              </div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-gray-900">
+                ₹{payouts.filter(p => p.status === 'completed').reduce((sum, p) => sum + Number(p.amount || 0), 0).toLocaleString()}
+              </div>
+              <p className="text-xs text-gray-500 mt-2">Successfully transferred</p>
+            </div>
+
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-2xs">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Pending Payouts</span>
+                <div className="p-2 bg-amber-50 text-amber-600 rounded-xl">
+                  <Clock size={18} />
+                </div>
+              </div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-amber-600">
+                ₹{payouts.filter(p => p.status === 'pending').reduce((sum, p) => sum + Number(p.amount || 0), 0).toLocaleString()}
+              </div>
+              <p className="text-xs text-amber-600 font-bold mt-2">
+                {payouts.filter(p => p.status === 'pending').length} request(s) awaiting approval
+              </p>
+            </div>
+          </div>
+
+          {/* Section 1: Payout Requests */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-2xs overflow-hidden">
+            <div className="p-4 sm:p-6 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <h3 className="font-extrabold text-gray-900 text-base">Withdrawal & Payout Requests</h3>
+                <p className="text-xs text-gray-500">Approve partner UPI / Bank payouts after sending funds</p>
+              </div>
+              <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-bold">
+                {payouts.length} Total Requests
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50/75 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                    <th className="py-3 px-4">Partner</th>
+                    <th className="py-3 px-4">Amount</th>
+                    <th className="py-3 px-4">Payout Method / Details</th>
+                    <th className="py-3 px-4">Requested On</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-xs">
+                  {payouts.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-gray-400">
+                        No withdrawal requests found.
+                      </td>
+                    </tr>
+                  ) : (
+                    payouts.map(p => (
+                      <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="py-3 px-4">
+                          <div className="font-bold text-gray-900">{p.user?.name || 'Partner'}</div>
+                          <div className="text-[11px] text-gray-500">{p.user?.email}</div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="text-sm font-extrabold text-gray-900">₹{p.amount?.toLocaleString()}</span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="font-mono text-xs text-gray-800">
+                            {p.payout_method === 'upi' ? (
+                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 text-brand-blue rounded-md font-bold">
+                                UPI: {p.payout_details?.upiId || 'N/A'}
+                              </span>
+                            ) : (
+                              <div className="space-y-0.5">
+                                <div><span className="text-gray-400">A/C:</span> {p.payout_details?.accountNumber}</div>
+                                <div><span className="text-gray-400">IFSC:</span> {p.payout_details?.ifsc} ({p.payout_details?.bankName})</div>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-gray-500">
+                          {p.requested_at ? new Date(p.requested_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            p.status === 'completed'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : p.status === 'rejected'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-amber-100 text-amber-800 animate-pulse'
+                          }`}>
+                            {p.status}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <button
+                            onClick={() => {
+                              setSelectedPayout(p)
+                              setPayoutForm({
+                                status: p.status === 'pending' ? 'completed' : p.status,
+                                transaction_ref: p.transaction_ref || '',
+                                admin_notes: p.admin_notes || ''
+                              })
+                              setPayoutModal(true)
+                            }}
+                            className="px-3 py-1.5 bg-brand-blue text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors shadow-2xs"
+                          >
+                            {p.status === 'pending' ? 'Settle Payout' : 'View / Edit'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Section 2: All Affiliate Partners */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-2xs overflow-hidden">
+            <div className="p-4 sm:p-6 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <h3 className="font-extrabold text-gray-900 text-base">Affiliate Partners Directory</h3>
+                <p className="text-xs text-gray-500">All registered referral partners and their performance</p>
+              </div>
+              <span className="px-3 py-1 bg-purple-50 text-brand-purple rounded-full text-xs font-bold">
+                {affiliates.length} Partners
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50/75 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                    <th className="py-3 px-4">Partner</th>
+                    <th className="py-3 px-4">Referral Code</th>
+                    <th className="py-3 px-4">Clicks</th>
+                    <th className="py-3 px-4">Referrals</th>
+                    <th className="py-3 px-4">Total Earned</th>
+                    <th className="py-3 px-4">Paid Out</th>
+                    <th className="py-3 px-4">Unpaid Balance</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-xs">
+                  {affiliates.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-gray-400">
+                        No affiliate profiles created yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    affiliates.map(a => (
+                      <tr key={a.id} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="py-3 px-4">
+                          <div className="font-bold text-gray-900">{a.user?.name || 'Partner'}</div>
+                          <div className="text-[11px] text-gray-500">{a.user?.email}</div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="font-mono font-bold text-brand-blue bg-blue-50 px-2 py-0.5 rounded">
+                            {a.referral_code}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 font-semibold text-gray-700">{a.clicks_count || 0}</td>
+                        <td className="py-3 px-4 font-semibold text-gray-700">{a.referralCount || 0}</td>
+                        <td className="py-3 px-4 font-extrabold text-emerald-600">₹{Number(a.total_earnings || 0).toLocaleString()}</td>
+                        <td className="py-3 px-4 text-gray-500">₹{Number(a.paid_balance || 0).toLocaleString()}</td>
+                        <td className="py-3 px-4 font-bold text-brand-orange">
+                          ₹{Number(a.pending_balance || 0).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ============================================================== */}
       {/* ACTION MODAL: CHANGE PLAN */}
       {/* ============================================================== */}
@@ -965,6 +1210,100 @@ export default function AdminDashboard() {
                   className="px-5 py-2 bg-green-600 text-white font-bold text-xs rounded-xl shadow-xs hover:bg-green-700 transition-all disabled:opacity-50"
                 >
                   {actionLoading ? 'Saving...' : 'Save WhatsApp IDs'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* ACTION MODAL: SETTLE AFFILIATE PAYOUT */}
+      {/* ============================================================== */}
+      {payoutModal && selectedPayout && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in duration-150">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div>
+                <h3 className="font-bold text-gray-900 text-base">Process Affiliate Payout</h3>
+                <p className="text-xs text-gray-500">{selectedPayout.user?.name} ({selectedPayout.user?.email})</p>
+              </div>
+              <button onClick={() => setPayoutModal(false)} className="p-1 text-gray-400 hover:text-gray-600 rounded-lg">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="bg-blue-50/70 border border-blue-100 rounded-2xl p-4">
+              <div className="text-xs text-gray-500 mb-1">Requested Amount</div>
+              <div className="text-2xl font-black text-brand-blue">₹{Number(selectedPayout.amount).toLocaleString()}</div>
+              
+              <div className="mt-3 pt-3 border-t border-blue-200/60 text-xs text-gray-700 space-y-1">
+                {selectedPayout.payout_method === 'upi' ? (
+                  <div>
+                    <span className="font-semibold text-gray-500">UPI ID:</span>{' '}
+                    <span className="font-mono font-bold text-gray-900">{selectedPayout.payout_details?.upiId}</span>
+                  </div>
+                ) : (
+                  <>
+                    <div><span className="font-semibold text-gray-500">Bank:</span> {selectedPayout.payout_details?.bankName}</div>
+                    <div><span className="font-semibold text-gray-500">Account:</span> {selectedPayout.payout_details?.accountNumber}</div>
+                    <div><span className="font-semibold text-gray-500">IFSC:</span> {selectedPayout.payout_details?.ifsc}</div>
+                    <div><span className="font-semibold text-gray-500">Holder:</span> {selectedPayout.payout_details?.holderName}</div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <form onSubmit={handleProcessPayout} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Update Status</label>
+                <select
+                  value={payoutForm.status}
+                  onChange={e => setPayoutForm({ ...payoutForm, status: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs font-semibold outline-none"
+                >
+                  <option value="completed">Completed (Funds Sent / Settled)</option>
+                  <option value="rejected">Rejected (Refund back to balance)</option>
+                  <option value="pending">Pending</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Bank / UPI Transaction Reference (UTR)</label>
+                <input
+                  type="text"
+                  value={payoutForm.transaction_ref}
+                  onChange={e => setPayoutForm({ ...payoutForm, transaction_ref: e.target.value })}
+                  placeholder="e.g. UTR29381029482 or UPI Txn ID"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs font-mono outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Admin Notes (Optional)</label>
+                <input
+                  type="text"
+                  value={payoutForm.admin_notes}
+                  onChange={e => setPayoutForm({ ...payoutForm, admin_notes: e.target.value })}
+                  placeholder="e.g. Sent via GPay to UPI ID"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs outline-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setPayoutModal(false)}
+                  className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={actionLoading}
+                  className="px-5 py-2 bg-brand-blue text-white font-bold text-xs rounded-xl shadow-xs hover:bg-blue-700 transition-all disabled:opacity-50"
+                >
+                  {actionLoading ? 'Saving...' : 'Confirm Update'}
                 </button>
               </div>
             </form>

@@ -11,6 +11,7 @@ const {
   getMonthlyUsage,
   checkTrialEligibility
 } = require('../utils/trialLimits');
+const { registerClientReferral } = require('../utils/affiliateEngine');
 
 const router = express.Router();
 
@@ -50,6 +51,14 @@ async function getOrCreateUser(reqUser) {
       return newProfile;
     }
     user = upsertedUser;
+
+    // Check if referral code was provided in user metadata during signup
+    const refCode = reqUser.user_metadata?.referral_code;
+    if (refCode) {
+      registerClientReferral(reqUser.id, refCode).catch(e => {
+        console.error('Failed to link referral during profile creation:', e);
+      });
+    }
   }
 
   return user;

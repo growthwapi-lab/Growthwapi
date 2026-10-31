@@ -109,7 +109,7 @@ export default function SignupPage() {
         
         <h2 className="text-2xl font-bold text-center text-brand-dark mb-2">Create your account</h2>
         <p className="text-center text-brand-purple font-medium mb-6 text-sm bg-purple-50 py-1 rounded-full w-max mx-auto px-4">
-          ✨ 7-day free trial included
+          ✨ 4-day free trial included
         </p>
         
         <form onSubmit={handleSubmit} className="space-y-4">

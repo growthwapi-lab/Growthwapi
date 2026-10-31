@@ -25,7 +25,7 @@ async function getOrCreateUser(reqUser) {
 
   if (!user) {
     const trialStart = new Date();
-    const trialEnd = new Date(trialStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const trialEnd = new Date(trialStart.getTime() + 4 * 24 * 60 * 60 * 1000);
 
     const newProfile = {
       id: reqUser.id,

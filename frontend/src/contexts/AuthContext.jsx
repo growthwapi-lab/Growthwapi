@@ -79,7 +79,7 @@ export function AuthProvider({ children }) {
         package_type: 'trial',
         account_status: 'trial',
         trial_start_date: new Date().toISOString(),
-        trial_end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+        trial_end_date: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString()
       }], { onConflict: 'id' })
       
       if (dbError) {

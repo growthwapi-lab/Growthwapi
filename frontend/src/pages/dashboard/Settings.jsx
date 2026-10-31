@@ -281,7 +281,7 @@ export default function Settings() {
                 </span>
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                {activePlan.isPaid ? `₹${activePlan.price.toLocaleString()}/month` : '7-Day Free Trial'} • {activePlan.daysRemaining} days remaining
+                {activePlan.isPaid ? `₹${activePlan.price.toLocaleString()}/month` : '4-Day Free Trial'} • {activePlan.daysRemaining} days remaining
               </p>
             </div>
             <Link

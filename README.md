@@ -90,7 +90,7 @@ npm run dev
 - Utility: ₹0.25/message
 - Marketing: ₹1.75/message
 
-**Free Trial**: 7 days with full Pro-level access
+**Free Trial**: 4 days with full Pro-level access
 
 ---
 

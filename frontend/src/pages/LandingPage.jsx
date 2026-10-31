@@ -493,7 +493,7 @@ export default function LandingPage() {
   const faqs = [
     { q: 'What is Growthwapi?', a: 'Growthwapi is an official WhatsApp Business API platform that lets businesses automate messaging, manage contacts, run bulk broadcasts, and deploy AI chatbots — all from one dashboard.' },
     { q: 'Do I need a WhatsApp Business Account?', a: 'Yes, you need a WhatsApp Business API account connected through Meta. We guide you through the entire setup process during onboarding.' },
-    { q: 'Is there a free trial?', a: 'Yes! Every new account gets a 7-day free trial with a limited message quota. No credit card required to start.' },
+    { q: 'Is there a free trial?', a: 'Yes! Every new account gets a 4-day free trial with a limited message quota. No credit card required to start.' },
     { q: 'What happens after my monthly quota is exhausted?', a: 'When your plan quota runs out, extra messages are billed at ₹0.25 per utility message and ₹1.75 per marketing message from your wallet balance.' },
     { q: 'Can I use the AI chatbot on any plan?', a: 'The AI WhatsApp Agent is available on Growth (500 AI replies/mo) and Pro (2,000 AI replies/mo) plans. Starter plan users can upgrade anytime.' },
     { q: 'Is my data secure?', a: 'Yes. All data is stored securely with enterprise-grade encryption and row-level security. Messages are transmitted via Meta\'s official encrypted WhatsApp API. We never store message content beyond what\'s necessary for inbox display.' },
@@ -624,7 +624,7 @@ export default function LandingPage() {
                   ▶ Watch Demo
                 </button>
               </div>
-              <p className="text-sm text-gray-400 mt-4">✓ 7-day free trial &nbsp;·&nbsp; ✓ No credit card required</p>
+              <p className="text-sm text-gray-400 mt-4">✓ 4-day free trial &nbsp;·&nbsp; ✓ No credit card required</p>
             </div>
             {/* Mockup */}
             <div className={`transition-all duration-700 ease-out ${heroVisible || prefersReduced ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-12'}`}
@@ -780,7 +780,7 @@ export default function LandingPage() {
               </div>
             </div>
             <div className="text-center mt-8 text-gray-500 text-sm space-y-1">
-              <p>✓ All plans include 7-day free trial. No credit card required to start.</p>
+              <p>✓ All plans include 4-day free trial. No credit card required to start.</p>
               <p>Extra messages: ₹0.25/utility msg &nbsp;·&nbsp; ₹1.75/marketing msg after quota.</p>
             </div>
           </div>
@@ -844,7 +844,7 @@ export default function LandingPage() {
             </h2>
             <p className="text-gray-300 text-lg mb-8">Start free. No credit card needed. Cancel anytime.</p>
             <RippleButton to="/signup" className="inline-block bg-[#F97316] text-white px-10 py-4 rounded-xl font-black text-lg shadow-2xl shadow-orange-900/30 hover:bg-orange-500 transition-all transform hover:-translate-y-1">
-              Start Your 7-Day Free Trial →
+              Start Your 4-Day Free Trial →
             </RippleButton>
           </div>
         </section>
@@ -905,7 +905,7 @@ export default function LandingPage() {
                   <li><a href="#pricing" className="hover:text-[#F97316] transition-colors">Pricing Plans</a></li>
                   <li><a href="#faq" className="hover:text-[#F97316] transition-colors">Frequently Asked Questions</a></li>
                   <li><Link to="/login" className="hover:text-[#F97316] transition-colors">Client Login</Link></li>
-                  <li><Link to="/signup" className="hover:text-[#F97316] transition-colors">Start 7-Day Free Trial</Link></li>
+                  <li><Link to="/signup" className="hover:text-[#F97316] transition-colors">Start 4-Day Free Trial</Link></li>
                 </ul>
               </div>
 

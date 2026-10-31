@@ -223,7 +223,7 @@ export default function Wallet() {
               {activePlan?.isPaid ? (
                 <>Price: <strong>₹{activePlan.price.toLocaleString()}/mo</strong></>
               ) : (
-                <>7-Day Free Trial Mode</>
+                <>4-Day Free Trial Mode</>
               )}
             </p>
           </div>

@@ -206,7 +206,7 @@ BEGIN
     'trial',
     'trial',
     NOW(),
-    NOW() + INTERVAL '7 days'
+    NOW() + INTERVAL '4 days'
   )
   ON CONFLICT (id) DO NOTHING;
   RETURN NEW;

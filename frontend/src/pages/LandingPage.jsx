@@ -538,6 +538,19 @@ export default function LandingPage() {
               {['Features','Pricing','FAQ'].map(l => (
                 <a key={l} href={`#${l.toLowerCase()}`} className="text-[#1E3A5F] hover:text-[#F97316] font-medium transition-colors">{l}</a>
               ))}
+              <a href="#contact" className="text-[#1E3A5F] hover:text-[#F97316] font-medium transition-colors">Contact</a>
+              <a
+                href="https://wa.me/919122257780?text=Hi%20Growthwapi%2C%20I%20have%20an%20inquiry%20regarding%20WhatsApp%20API."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hidden xl:flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-xl transition-all"
+                title="Direct WhatsApp Support"
+              >
+                <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-[#25D366]">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                </svg>
+                <span>+91 91222 57780</span>
+              </a>
               <Link to="/partner" className="text-brand-orange font-extrabold flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-orange-50 border border-orange-200 transition-all text-xs sm:text-sm shadow-2xs">
                 <span>💰</span>
                 <span>Earn Now</span>
@@ -558,7 +571,7 @@ export default function LandingPage() {
           </div>
           {/* Mobile menu */}
           {mobileOpen && (
-            <div className="md:hidden bg-white border-t border-gray-100 px-6 pb-4 space-y-3">
+            <div className="md:hidden bg-white border-t border-gray-100 px-6 pb-5 space-y-3 shadow-xl">
               <Link to="/partner" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 py-2 text-brand-orange font-bold">
                 <span>💰</span>
                 <span>Earn Now (Partner Program)</span>
@@ -566,8 +579,18 @@ export default function LandingPage() {
               {['Features','Pricing','FAQ'].map(l => (
                 <a key={l} href={`#${l.toLowerCase()}`} onClick={() => setMobileOpen(false)} className="block py-2 text-[#1E3A5F] font-medium">{l}</a>
               ))}
-              <Link to="/login" onClick={() => setMobileOpen(false)} className="block py-2 text-[#1E3A5F] font-medium">Login</Link>
-              <Link to="/signup" onClick={() => setMobileOpen(false)} className="block w-full text-center bg-[#F97316] text-white py-2.5 rounded-lg font-bold">Start Free Trial</Link>
+              <a href="#contact" onClick={() => setMobileOpen(false)} className="block py-2 text-[#1E3A5F] font-medium">Contact Us</a>
+              <a href="https://wa.me/919122257780" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 py-2 text-emerald-600 font-bold border-t border-gray-100 pt-3">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>WhatsApp: +91 91222 57780</span>
+              </a>
+              <a href="mailto:growthwapi@gmail.com" className="block py-1.5 text-xs text-gray-500 font-medium">
+                ✉️ growthwapi@gmail.com
+              </a>
+              <div className="pt-2 flex gap-2">
+                <Link to="/login" onClick={() => setMobileOpen(false)} className="flex-1 text-center border border-[#1E3A5F] text-[#1E3A5F] py-2 rounded-lg font-semibold">Login</Link>
+                <Link to="/signup" onClick={() => setMobileOpen(false)} className="flex-1 text-center bg-[#F97316] text-white py-2 rounded-lg font-bold">Start Trial</Link>
+              </div>
             </div>
           )}
         </nav>
@@ -839,56 +862,185 @@ export default function LandingPage() {
         </section>
 
         {/* ── FOOTER ── */}
-        <footer style={{ background: '#12233F' }} className="border-t border-white/5 pt-12 pb-6">
+        <footer id="contact" style={{ background: '#12233F' }} className="border-t border-white/5 pt-16 pb-8 text-white">
           <div className="max-w-7xl mx-auto px-6">
-            <div className="grid md:grid-cols-3 gap-8 mb-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
               {/* Brand */}
               <div>
                 <div className="flex items-center mb-4">
                   <img src="/logo.png.png" alt="Growthwapi" className="h-10 md:h-12 object-contain" />
                 </div>
-                <p className="text-gray-400 text-sm leading-relaxed">
-                  Grow your business, one conversation at a time.
+                <p className="text-gray-300 text-sm leading-relaxed mb-6">
+                  Turn WhatsApp into your most powerful growth tool. Official Meta WhatsApp Business API platform for Indian businesses.
                 </p>
-                <div className="flex gap-3 mt-4">
-                  {[
-                    { icon: '💬', label: 'WhatsApp', href: '#' },
-                    { icon: '📸', label: 'Instagram', href: '#' },
-                    { icon: '💼', label: 'LinkedIn', href: '#' },
-                  ].map(s => (
-                    <a key={s.label} href={s.href} title={s.label}
-                      className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-sm hover:bg-[#F97316] transition-colors">
-                      {s.icon}
+                {/* Official Social Links */}
+                <div className="space-y-2.5">
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Connect On Social</span>
+                  <div className="flex items-center gap-3">
+                    {/* WhatsApp */}
+                    <a
+                      href="https://wa.me/919122257780?text=Hi%20Growthwapi%2C%20I%20have%20an%20inquiry%20regarding%20WhatsApp%20API."
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Chat on WhatsApp"
+                      className="flex items-center gap-2 bg-[#25D366]/20 hover:bg-[#25D366] text-[#25D366] hover:text-white border border-[#25D366]/40 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs group"
+                    >
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                      </svg>
+                      <span>WhatsApp</span>
                     </a>
-                  ))}
+
+                    {/* Instagram */}
+                    <a
+                      href="https://www.instagram.com/growthwapi.in?cplk=MWV0MGIxbjhvcDhhbQ=="
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Follow on Instagram"
+                      className="flex items-center gap-2 bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-orange-500/20 hover:from-purple-600 hover:to-pink-600 text-pink-400 hover:text-white border border-pink-400/40 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs group"
+                    >
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current">
+                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                      </svg>
+                      <span>Instagram</span>
+                    </a>
+                  </div>
                 </div>
               </div>
-              {/* Links */}
+
+              {/* Column 2: Platform Links */}
               <div>
-                <h4 className="text-white font-bold mb-4">Platform</h4>
-                <ul className="space-y-2 text-gray-400 text-sm">
-                  <li><Link to="/partner" className="text-[#F97316] font-bold hover:underline transition-colors">Affiliate & Partner Program 💰</Link></li>
-                  <li><a href="#features" className="hover:text-[#F97316] transition-colors">Features</a></li>
-                  <li><a href="#pricing" className="hover:text-[#F97316] transition-colors">Pricing</a></li>
-                  <li><a href="#faq" className="hover:text-[#F97316] transition-colors">FAQ</a></li>
-                  <li><Link to="/login" className="hover:text-[#F97316] transition-colors">Login</Link></li>
+                <h4 className="text-white font-bold text-sm uppercase tracking-wider mb-4 border-b border-white/10 pb-2">Platform</h4>
+                <ul className="space-y-2.5 text-gray-300 text-sm">
+                  <li><Link to="/partner" className="text-[#F97316] font-bold hover:underline transition-colors flex items-center gap-1.5"><span>💰</span> Affiliate & Partner Program</Link></li>
+                  <li><a href="#features" className="hover:text-[#F97316] transition-colors">Features & Tools</a></li>
+                  <li><a href="#pricing" className="hover:text-[#F97316] transition-colors">Pricing Plans</a></li>
+                  <li><a href="#faq" className="hover:text-[#F97316] transition-colors">Frequently Asked Questions</a></li>
+                  <li><Link to="/login" className="hover:text-[#F97316] transition-colors">Client Login</Link></li>
+                  <li><Link to="/signup" className="hover:text-[#F97316] transition-colors">Start 7-Day Free Trial</Link></li>
                 </ul>
               </div>
-              {/* Legal */}
+
+              {/* Column 3: Contact & Support (DEDICATED) */}
               <div>
-                <h4 className="text-white font-bold mb-4">Legal & Contact</h4>
-                <ul className="space-y-2 text-gray-400 text-sm">
+                <h4 className="text-white font-bold text-sm uppercase tracking-wider mb-4 border-b border-white/10 pb-2">Contact & Support</h4>
+                <div className="space-y-3.5 text-sm">
+                  {/* Phone / Call */}
+                  <div className="flex items-start gap-3">
+                    <span className="p-2 bg-white/10 text-[#F97316] rounded-xl shrink-0 mt-0.5">
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current">
+                        <path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+                      </svg>
+                    </span>
+                    <div>
+                      <span className="text-xs text-gray-400 block font-medium">Phone Support</span>
+                      <a href="tel:+919122257780" className="text-white hover:text-[#F97316] font-bold transition-colors">
+                        +91 91222 57780
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* WhatsApp Support */}
+                  <div className="flex items-start gap-3">
+                    <span className="p-2 bg-emerald-500/20 text-[#25D366] rounded-xl shrink-0 mt-0.5">
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                      </svg>
+                    </span>
+                    <div>
+                      <span className="text-xs text-gray-400 block font-medium">WhatsApp (Instant Chat)</span>
+                      <a
+                        href="https://wa.me/919122257780?text=Hi%20Growthwapi%2C%20I%20want%20to%20know%20more%20about%20WhatsApp%20API%20services."
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#25D366] hover:underline font-bold transition-colors"
+                      >
+                        +91 91222 57780
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Email */}
+                  <div className="flex items-start gap-3">
+                    <span className="p-2 bg-white/10 text-blue-400 rounded-xl shrink-0 mt-0.5">
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current">
+                        <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                      </svg>
+                    </span>
+                    <div>
+                      <span className="text-xs text-gray-400 block font-medium">Official Email</span>
+                      <a href="mailto:growthwapi@gmail.com" className="text-white hover:text-[#F97316] font-bold transition-colors">
+                        growthwapi@gmail.com
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Instagram handle */}
+                  <div className="flex items-start gap-3">
+                    <span className="p-2 bg-pink-500/20 text-pink-400 rounded-xl shrink-0 mt-0.5">
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current">
+                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                      </svg>
+                    </span>
+                    <div>
+                      <span className="text-xs text-gray-400 block font-medium">Instagram</span>
+                      <a
+                        href="https://www.instagram.com/growthwapi.in?cplk=MWV0MGIxbjhvcDhhbQ=="
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-pink-400 hover:underline font-bold transition-colors"
+                      >
+                        @growthwapi.in
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Column 4: Legal & Security */}
+              <div>
+                <h4 className="text-white font-bold text-sm uppercase tracking-wider mb-4 border-b border-white/10 pb-2">Legal & Security</h4>
+                <ul className="space-y-2.5 text-gray-300 text-sm mb-5">
                   <li><a href="#" className="hover:text-[#F97316] transition-colors">Privacy Policy</a></li>
                   <li><a href="#" className="hover:text-[#F97316] transition-colors">Terms of Service</a></li>
-                  <li><a href="mailto:support@growthwapi.com" className="hover:text-[#F97316] transition-colors">support@growthwapi.com</a></li>
+                  <li><a href="#" className="hover:text-[#F97316] transition-colors">Refund & Cancellation</a></li>
                 </ul>
+                <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 text-xs text-gray-300 space-y-1.5">
+                  <span className="text-emerald-400 font-bold flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                    Official Meta Cloud API
+                  </span>
+                  <p className="text-[11px] text-gray-400 leading-relaxed">
+                    End-to-end encrypted messaging with 99.9% uptime SLA.
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="border-t border-white/10 pt-6 text-center text-gray-500 text-sm">
-              © {new Date().getFullYear()} Growthwapi. All rights reserved. Built with ❤️ for Indian businesses.
+
+            <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left text-gray-400 text-xs">
+              <p>© {new Date().getFullYear()} Growthwapi. All rights reserved. Built with ❤️ for Indian businesses.</p>
+              <div className="flex flex-wrap items-center justify-center gap-3 text-gray-400">
+                <span>WhatsApp: <a href="https://wa.me/919122257780" target="_blank" rel="noopener noreferrer" className="text-emerald-400 font-bold hover:underline">+91 91222 57780</a></span>
+                <span>•</span>
+                <span>Email: <a href="mailto:growthwapi@gmail.com" className="text-white font-bold hover:underline">growthwapi@gmail.com</a></span>
+              </div>
             </div>
           </div>
         </footer>
+
+        {/* ── FLOATING WHATSAPP CHAT BUTTON ── */}
+        <a
+          href="https://wa.me/919122257780?text=Hi%20Growthwapi%2C%20I%20want%20to%20know%20more%20about%20WhatsApp%20API%20automation!"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 bg-[#25D366] hover:bg-[#20ba59] text-white px-4 py-3.5 rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 group border-2 border-white/20"
+          title="Chat with Growthwapi Support on WhatsApp"
+        >
+          <svg viewBox="0 0 24 24" className="w-6 h-6 fill-white shrink-0">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+          </svg>
+          <span className="font-bold text-sm tracking-wide hidden sm:inline">Chat on WhatsApp</span>
+        </a>
 
       </div>
     </>

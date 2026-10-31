@@ -530,12 +530,18 @@ export default function AffiliateLanding() {
             <span>© {new Date().getFullYear()} Growthwapi. Official WhatsApp Business API Solution.</span>
           </div>
 
-          <div className="flex items-center gap-6 font-semibold">
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6 font-semibold">
             <Link to="/" className="hover:text-white transition-colors">Home</Link>
             <Link to="/login" className="hover:text-white transition-colors">Login</Link>
             <Link to="/signup" className="hover:text-white transition-colors">Register</Link>
-            <a href="https://wa.me/919122257780" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
-              WhatsApp Support
+            <a href="https://wa.me/919122257780" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1">
+              WhatsApp (+91 91222 57780)
+            </a>
+            <a href="https://www.instagram.com/growthwapi.in?cplk=MWV0MGIxbjhvcDhhbQ==" target="_blank" rel="noopener noreferrer" className="text-pink-400 hover:text-pink-300 transition-colors">
+              Instagram
+            </a>
+            <a href="mailto:growthwapi@gmail.com" className="hover:text-white transition-colors">
+              growthwapi@gmail.com
             </a>
           </div>
         </div>

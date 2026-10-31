@@ -18,15 +18,72 @@ export default function SignupPage() {
     referralCode: referralParam.toUpperCase()
   })
 
-  // If URL has ?ref=CODE, save in localStorage & track click
+  const [refStatus, setRefStatus] = useState({
+    checking: false,
+    valid: false,
+    partnerName: '',
+    error: ''
+  })
+
+  // Validate referral code with backend
+  const validateReferralCode = async (code) => {
+    const cleanCode = (code || '').trim().toUpperCase()
+    if (!cleanCode) {
+      setRefStatus({ checking: false, valid: false, partnerName: '', error: '' })
+      return
+    }
+
+    setRefStatus(prev => ({ ...prev, checking: true, error: '' }))
+    try {
+      const res = await api.get(`/api/affiliate/validate/${cleanCode}`)
+      if (res.data?.valid) {
+        setRefStatus({
+          checking: false,
+          valid: true,
+          partnerName: res.data.partnerName || 'Verified Partner',
+          error: ''
+        })
+      } else {
+        setRefStatus({
+          checking: false,
+          valid: false,
+          partnerName: '',
+          error: `Referral code "${cleanCode}" is invalid or does not exist.`
+        })
+      }
+    } catch (err) {
+      setRefStatus({
+        checking: false,
+        valid: false,
+        partnerName: '',
+        error: `Referral code "${cleanCode}" is invalid or does not exist.`
+      })
+    }
+  }
+
+  // If URL has ?ref=CODE, save in localStorage & track click + validate
   useEffect(() => {
     const code = referralParam || localStorage.getItem('gw_referral_code') || ''
     if (code) {
-      localStorage.setItem('gw_referral_code', code.toUpperCase())
-      setFormData(prev => ({ ...prev, referralCode: code.toUpperCase() }))
-      api.post('/api/affiliate/track-click', { code }).catch(() => {})
+      const cleanCode = code.toUpperCase()
+      localStorage.setItem('gw_referral_code', cleanCode)
+      setFormData(prev => ({ ...prev, referralCode: cleanCode }))
+      validateReferralCode(cleanCode)
+      api.post('/api/affiliate/track-click', { code: cleanCode }).catch(() => {})
     }
   }, [referralParam])
+
+  // Debounced validation when user types referral code manually
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (formData.referralCode) {
+        validateReferralCode(formData.referralCode)
+      } else {
+        setRefStatus({ checking: false, valid: false, partnerName: '', error: '' })
+      }
+    }, 450)
+    return () => clearTimeout(timer)
+  }, [formData.referralCode])
   const [loading, setLoading] = useState(false)
   const { signUp } = useAuth()
   const navigate = useNavigate()
@@ -67,6 +124,19 @@ export default function SignupPage() {
 
     if (formData.password !== formData.confirmPassword) {
       return toast.error("Passwords don't match")
+    }
+
+    const trimmedCode = (formData.referralCode || '').trim().toUpperCase()
+    if (trimmedCode) {
+      // Strictly block account creation if referral code is invalid
+      try {
+        const valRes = await api.get(`/api/affiliate/validate/${trimmedCode}`)
+        if (!valRes.data?.valid) {
+          return toast.error(`Invalid referral code "${trimmedCode}". Please enter a valid partner code or leave it empty.`)
+        }
+      } catch (err) {
+        return toast.error(`Invalid referral code "${trimmedCode}". Please enter a valid partner code or leave it empty.`)
+      }
     }
 
     setLoading(true)
@@ -170,23 +240,70 @@ export default function SignupPage() {
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="block text-xs font-semibold text-gray-600">Referral / Partner Code (Optional)</label>
-              {formData.referralCode && (
+              {refStatus.checking && (
+                <span className="text-[10px] font-medium text-blue-600 animate-pulse">
+                  Verifying code...
+                </span>
+              )}
+              {!refStatus.checking && refStatus.valid && (
                 <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                  Partner Applied ✨
+                  ✓ {refStatus.partnerName || 'Verified Partner'}
+                </span>
+              )}
+              {!refStatus.checking && refStatus.error && (
+                <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                  ✗ Invalid Code
                 </span>
               )}
             </div>
-            <input
-              type="text" name="referralCode"
-              placeholder="e.g. GW-PARTNER-123"
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-purple outline-none uppercase font-mono text-xs"
-              value={formData.referralCode} onChange={handleChange}
-            />
+            <div className="relative">
+              <input
+                type="text" name="referralCode"
+                placeholder="e.g. GW-ADMIN-101"
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none uppercase font-mono text-xs transition-colors ${
+                  refStatus.valid
+                    ? 'border-emerald-500 bg-emerald-50/20 focus:ring-emerald-400'
+                    : refStatus.error
+                    ? 'border-rose-400 bg-rose-50/30 focus:ring-rose-400'
+                    : 'border-gray-200 focus:ring-brand-purple'
+                }`}
+                value={formData.referralCode} onChange={handleChange}
+              />
+              {formData.referralCode && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormData(prev => ({ ...prev, referralCode: '' }))
+                    setRefStatus({ checking: false, valid: false, partnerName: '', error: '' })
+                    localStorage.removeItem('gw_referral_code')
+                  }}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs px-1"
+                  title="Clear referral code"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Referral Offer Unlock Banner */}
-          {formData.referralCode && (
-            <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-3.5 space-y-2.5">
+          {/* Invalid Referral Code Error Box */}
+          {!refStatus.checking && refStatus.error && formData.referralCode && (
+            <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 text-xs text-rose-700 space-y-1 animate-fadeIn">
+              <p className="font-bold flex items-center gap-1.5 text-rose-800">
+                <span>⚠️</span> Invalid Referral Code
+              </p>
+              <p className="text-[11px] leading-relaxed">
+                Referral code <strong>"{formData.referralCode}"</strong> was not found in our partner database.
+              </p>
+              <p className="text-[11px] font-medium text-rose-600">
+                Please enter a valid partner code, or click <strong>✕</strong> above to sign up normally without one.
+              </p>
+            </div>
+          )}
+
+          {/* Valid Referral Offer Unlock Banner */}
+          {!refStatus.checking && refStatus.valid && (
+            <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-3.5 space-y-2.5 animate-fadeIn">
               <p className="text-xs font-black text-emerald-700 flex items-center gap-1.5">
                 🎁 Partner Referral Unlocks:
               </p>
@@ -201,12 +318,12 @@ export default function SignupPage() {
                 <div className="flex items-start gap-2">
                   <span className="text-emerald-500 text-sm mt-0.5">✓</span>
                   <p className="text-xs text-emerald-800 font-semibold leading-snug">
-                    <span className="text-emerald-700 font-black">1-on-1 Setup Support</span> — Your partner will personally onboard you
+                    <span className="text-emerald-700 font-black">1-on-1 Setup Support</span> — {refStatus.partnerName} will personally onboard you
                     and set up your WhatsApp Business API & Meta account.
                   </p>
                 </div>
               </div>
-              <p className="text-[10px] text-emerald-600 opacity-80">*Bonus messages on first plan purchase only. Setup support by your referring partner.</p>
+              <p className="text-[10px] text-emerald-600 opacity-80">*Bonus messages on first plan purchase only. Setup support provided by your partner.</p>
             </div>
           )}
 

@@ -417,4 +417,46 @@ router.post('/track-click', async (req, res) => {
   }
 });
 
+// 6. GET /api/affiliate/validate/:code - Validate if referral code exists
+router.get('/validate/:code', async (req, res) => {
+  try {
+    const { code } = req.params;
+    if (!code || !code.trim()) {
+      return res.status(400).json({ valid: false, message: 'Referral code is required.' });
+    }
+
+    const cleanCode = code.trim().toUpperCase();
+    const { data: profile, error } = await supabaseAdmin
+      .from('affiliate_profiles')
+      .select('id, user_id, referral_code, is_approved, is_paid_member')
+      .eq('referral_code', cleanCode)
+      .maybeSingle();
+
+    if (error || !profile) {
+      return res.status(404).json({
+        valid: false,
+        message: `Referral code "${cleanCode}" is invalid or does not exist.`
+      });
+    }
+
+    const { data: partnerUser } = await supabaseAdmin
+      .from('users')
+      .select('name, business_name')
+      .eq('id', profile.user_id)
+      .maybeSingle();
+
+    const partnerName = partnerUser?.business_name || partnerUser?.name || 'Growthwapi Partner';
+
+    return res.json({
+      valid: true,
+      code: profile.referral_code,
+      partnerName,
+      message: `Verified Partner (${partnerName})`
+    });
+  } catch (err) {
+    console.error('Error validating referral code:', err);
+    res.status(500).json({ valid: false, message: 'Could not validate referral code' });
+  }
+});
+
 module.exports = router;

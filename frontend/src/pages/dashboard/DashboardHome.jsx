@@ -8,13 +8,26 @@ import toast from 'react-hot-toast'
 export default function DashboardHome() {
   const { user } = useAuth()
   const name = user?.email?.split('@')[0] || 'User'
-  const [profile, setProfile] = useState(null)
-  const [connecting, setConnecting] = useState(false)
-  const [statsData, setStatsData] = useState({ messages: 0, contacts: 0, campaigns: 0, balance: 0 })
-  const [recentMessages, setRecentMessages] = useState([])
-  const [loadingStats, setLoadingStats] = useState(true)
 
-  const [activePlan, setActivePlan] = useState(null)
+  // Instant Cache initialization (0ms display, eliminates 20s cold start flash)
+  const cachedProfile = (() => {
+    try { return JSON.parse(localStorage.getItem('gw_cached_profile') || 'null') } catch { return null }
+  })()
+  const cachedPlan = (() => {
+    try { return JSON.parse(localStorage.getItem('gw_cached_plan') || 'null') } catch { return null }
+  })()
+  const cachedStats = (() => {
+    try { return JSON.parse(localStorage.getItem('gw_cached_stats') || 'null') } catch { return null }
+  })()
+
+  const [profile, setProfile] = useState(cachedProfile)
+  const [activePlan, setActivePlan] = useState(cachedPlan)
+  const [statsData, setStatsData] = useState(cachedStats || { messages: 0, contacts: 0, campaigns: 0, balance: 0 })
+  const [recentMessages, setRecentMessages] = useState([])
+  const [connecting, setConnecting] = useState(false)
+  const [loadingProfile, setLoadingProfile] = useState(!cachedProfile)
+  const [loadingStats, setLoadingStats] = useState(!cachedStats)
+
   const signupBufferRef = useRef({})
   const signupTimeoutRef = useRef(null)
 
@@ -67,6 +80,7 @@ export default function DashboardHome() {
     try {
       const res = await api.get('/api/users/active-plan')
       setActivePlan(res.data)
+      try { localStorage.setItem('gw_cached_plan', JSON.stringify(res.data)) } catch {}
     } catch {
       // ignore
     }
@@ -76,13 +90,16 @@ export default function DashboardHome() {
     try {
       const res = await api.get('/api/users/profile')
       setProfile(res.data)
+      try { localStorage.setItem('gw_cached_profile', JSON.stringify(res.data)) } catch {}
     } catch (err) {
       console.error('Failed to fetch profile', err)
+    } finally {
+      setLoadingProfile(false)
     }
   }
 
   const fetchDashboardStats = async () => {
-    setLoadingStats(true)
+    if (!cachedStats) setLoadingStats(true)
     try {
       const [msgRes, contactRes, broadcastRes, walletRes] = await Promise.all([
         api.get('/api/whatsapp/messages').catch(() => ({ data: [] })),
@@ -96,14 +113,15 @@ export default function DashboardHome() {
       const broadcasts = broadcastRes.data || [];
       const wallet = walletRes.data || {};
 
-      setStatsData({
+      const newStats = {
         messages: msgs.length,
         contacts: contacts.length,
         campaigns: broadcasts.length,
         balance: wallet.wallet_balance || 0,
-      });
-
-      setRecentMessages(msgs.slice(0, 5));
+      }
+      setStatsData(newStats)
+      try { localStorage.setItem('gw_cached_stats', JSON.stringify(newStats)) } catch {}
+      setRecentMessages(msgs.slice(0, 5))
     } catch (e) {
       console.error('Error loading dashboard stats:', e);
     } finally {
@@ -122,6 +140,7 @@ export default function DashboardHome() {
       toast.success('🎉 WhatsApp Business account connected successfully!')
       if (res.data?.user) {
         setProfile(res.data.user)
+        try { localStorage.setItem('gw_cached_profile', JSON.stringify(res.data.user)) } catch {}
       } else {
         fetchProfile()
       }
@@ -177,7 +196,18 @@ export default function DashboardHome() {
       </div>
 
       {/* WhatsApp Connection Banner */}
-      {isConnected ? (
+      {loadingProfile && !profile ? (
+        <div className="bg-white rounded-2xl p-7 border border-gray-200 shadow-sm animate-pulse flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4 w-full">
+            <div className="w-14 h-14 bg-gray-200 rounded-full shrink-0" />
+            <div className="space-y-2 flex-1">
+              <div className="h-5 bg-gray-200 rounded-lg w-48" />
+              <div className="h-3.5 bg-gray-100 rounded-lg w-3/4 max-w-md" />
+            </div>
+          </div>
+          <div className="h-10 bg-gray-200 rounded-xl w-32 shrink-0 hidden md:block" />
+        </div>
+      ) : isConnected ? (
         <div className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between shadow-lg shadow-teal-100">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-white flex-shrink-0">
@@ -306,6 +336,18 @@ export default function DashboardHome() {
                   <span className="font-mono text-gray-600">{m.direction === 'outbound' ? m.to_number : m.from_number}</span>
                 </div>
                 <span className="text-gray-400 text-xs">{new Date(m.sent_at).toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+        ) : loadingStats ? (
+          <div className="p-6 space-y-4 animate-pulse">
+            {[1, 2, 3].map((n) => (
+              <div key={n} className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-16 h-5 bg-gray-200 rounded" />
+                  <div className="w-32 h-4 bg-gray-100 rounded" />
+                </div>
+                <div className="w-24 h-4 bg-gray-100 rounded" />
               </div>
             ))}
           </div>

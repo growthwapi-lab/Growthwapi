@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
+import api from './lib/api'
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/auth/LoginPage'
 import SignupPage from './pages/auth/SignupPage'
@@ -23,6 +25,11 @@ import GettingStarted from './pages/dashboard/GettingStarted'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
+  useEffect(() => {
+    // Pre-warm backend API to wake up Render free tier early in background
+    api.get('/').catch(() => {})
+  }, [])
+
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />

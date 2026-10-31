@@ -9,7 +9,11 @@ export default function DashboardLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [activePlan, setActivePlan] = useState(null)
+  const [activePlan, setActivePlan] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('gw_cached_plan') || 'null')
+    } catch { return null }
+  })
   const [isAdmin, setIsAdmin] = useState(false)
 
   const ADMIN_EMAILS = ['sauravrai8757@gmail.com', 'growthwapi@gmail.com']
@@ -34,7 +38,10 @@ export default function DashboardLayout() {
 
   const fetchActivePlan = () => {
     api.get('/api/users/active-plan')
-      .then(res => setActivePlan(res.data))
+      .then(res => {
+        setActivePlan(res.data)
+        try { localStorage.setItem('gw_cached_plan', JSON.stringify(res.data)) } catch {}
+      })
       .catch(() => {})
   }
 
@@ -70,6 +77,12 @@ export default function DashboardLayout() {
 
 
   const handleLogout = async () => {
+    try {
+      localStorage.removeItem('gw_cached_profile')
+      localStorage.removeItem('gw_cached_plan')
+      localStorage.removeItem('gw_cached_stats')
+      localStorage.removeItem('gw_cached_messages')
+    } catch {}
     await signOut()
     navigate('/login')
   }

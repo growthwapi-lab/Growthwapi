@@ -39,13 +39,59 @@ function StatusTick({ status }) {
   return <Clock className="w-3.5 h-3.5 text-gray-400 inline shrink-0 animate-pulse" title="Sending..." />
 }
 
+function groupMessagesToConversations(msgList) {
+  const grouped = {}
+  msgList.forEach((m) => {
+    const phone = m.direction === 'outbound' ? m.to_number : m.from_number
+    if (!phone) return
+    const getSnippet = () => {
+      let c = m.content
+      if (typeof c === 'string') {
+        try { c = JSON.parse(c) } catch {}
+      }
+      if (typeof c === 'string') return c
+      if (c?.text?.body) return c.text.body
+      if (c?.body) return c.body
+      if (c?.image) return '📷 Photo'
+      if (c?.document) return '📄 Document'
+      if (c?.audio) return '🎵 Audio'
+      if (c?.video) return '🎥 Video'
+      if (c?.template?.name) return `📋 ${c.template.name}`
+      return typeof m.content === 'string' ? m.content : 'Message'
+    }
+
+    if (!grouped[phone]) {
+      grouped[phone] = {
+        id: phone,
+        name: phone,
+        phone,
+        lastMessage: getSnippet(),
+        time: new Date(m.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        sent_at: m.sent_at,
+        needsHuman: false,
+        messages: [],
+      }
+    }
+    if (m.needs_human) {
+      grouped[phone].needsHuman = true
+    }
+    grouped[phone].messages.push(m)
+  })
+  return Object.values(grouped).sort((a, b) => new Date(b.sent_at) - new Date(a.sent_at))
+}
+
 export default function Inbox() {
-  const [messages, setMessages] = useState([])
-  const [conversations, setConversations] = useState([])
-  const [activeConv, setActiveConv] = useState(null)
+  const cachedMsgs = (() => {
+    try { return JSON.parse(localStorage.getItem('gw_cached_messages') || '[]') } catch { return [] }
+  })()
+  const initialConvs = groupMessagesToConversations(cachedMsgs)
+
+  const [messages, setMessages] = useState(cachedMsgs)
+  const [conversations, setConversations] = useState(initialConvs)
+  const [activeConv, setActiveConv] = useState(initialConvs.length > 0 && typeof window !== 'undefined' && window.innerWidth >= 768 ? initialConvs[0] : null)
   const [newMessage, setNewMessage] = useState('')
   const [selectedFile, setSelectedFile] = useState(null) // { file, base64, previewUrl, name, type }
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(initialConvs.length === 0)
   const [sending, setSending] = useState(false)
   const [resolving, setResolving] = useState(false)
 
@@ -131,6 +177,7 @@ export default function Inbox() {
 
       const convList = Object.values(grouped).sort((a, b) => new Date(b.sent_at) - new Date(a.sent_at))
       setConversations(convList)
+      try { localStorage.setItem('gw_cached_messages', JSON.stringify(msgList.slice(0, 100))) } catch {}
 
       const currentActiveId = activeConvIdRef.current
       if (currentActiveId) {
@@ -542,6 +589,18 @@ export default function Inbox() {
                 )}
               </div>
             ))
+          ) : loading ? (
+            <div className="p-3 space-y-2.5 animate-pulse">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <div key={n} className="p-3.5 bg-white rounded-xl border border-gray-100 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <div className="h-4 bg-gray-200 rounded w-32" />
+                    <div className="h-3 bg-gray-100 rounded w-10" />
+                  </div>
+                  <div className="h-3 bg-gray-100 rounded w-48" />
+                </div>
+              ))}
+            </div>
           ) : (
             <div className="p-8 text-center text-gray-400 text-sm flex flex-col items-center">
               <MessageSquare size={32} className="text-gray-300 mb-2" />
@@ -799,6 +858,11 @@ export default function Inbox() {
               </form>
             </div>
           </>
+        ) : loading && conversations.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-gray-400 gap-3">
+            <div className="w-10 h-10 border-3 border-brand-orange border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm font-semibold text-gray-500">Connecting to WhatsApp Inbox...</p>
+          </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
             <MessageSquare size={48} className="text-gray-300 mb-3" />

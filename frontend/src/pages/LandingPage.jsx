@@ -232,13 +232,68 @@ function FaqItem({ q, a, isOpen, onToggle }) {
   )
 }
 
+// ─── CLIENT DATA (COMPANIES & TESTIMONIALS) ───
+const CLIENT_COMPANIES = [
+  {
+    company: 'The Backstory Media',
+    founder: 'Shourabh Tomar',
+    role: 'CEO & Founder',
+    website: 'https://thebackstorymedia.com',
+    displayUrl: 'thebackstorymedia.com',
+    logo: '/thebackstorymedia logo.png.png',
+    avatarInitials: 'ST',
+    text: "Growthwapi transformed how we communicate with our media clients. Automated project milestone updates and bulk WhatsApp campaigns deliver 98% open rates with zero deliverability issues.",
+    rating: 5
+  },
+  {
+    company: 'Sportspefb',
+    founder: 'Dr. Aashish Jakhar',
+    role: 'Founder & President',
+    website: 'https://sportspefb.org',
+    displayUrl: 'Sportspefb.org',
+    logo: '/sportspefb logo.png.png',
+    avatarInitials: 'AJ',
+    text: "Managing athlete registrations and nationwide sports event notices used to take days. With Growthwapi's official WhatsApp Business API, we broadcast verified updates in seconds.",
+    rating: 5
+  },
+  {
+    company: 'The Take Studio',
+    founder: 'Shourabh Tomar',
+    role: 'Founder & CEO',
+    website: 'https://thetakestudio.com',
+    displayUrl: 'thetakestudio.com',
+    logo: '/thetakestudio logo.png.png',
+    avatarInitials: 'ST',
+    text: "Our studio bookings doubled after automating shoot confirmations and portfolio links via Growthwapi. The official green-tick ready integration gives our clients immense confidence.",
+    rating: 5
+  },
+  {
+    company: 'NPVL',
+    founder: 'Mr. Parveen Mishra',
+    role: 'Co-Founder',
+    website: 'https://npvlofficial.com',
+    displayUrl: 'Npvlofficial.com',
+    logo: '/npvl logo.png.png',
+    avatarInitials: 'PM',
+    text: "High reliability and instant message delivery were must-haves for our commercial operations. Growthwapi is rock solid, and their template approval support is lightning fast.",
+    rating: 5
+  },
+  {
+    company: 'Veer Teja Water Technology',
+    founder: 'Nemi Chand',
+    role: 'Founder & Owner',
+    website: 'https://veertejawatertech.store',
+    displayUrl: 'Veertejawatertech.store',
+    logo: '/veertejawatertech logo.png.png',
+    avatarInitials: 'NC',
+    text: "Automated service schedules, warranty alerts, and filter replacement reminders via WhatsApp helped us achieve an 85%+ repeat customer rate. Best investment for our business!",
+    rating: 5
+  }
+]
+
 // ─── TESTIMONIAL SLIDER ───
 function TestimonialSlider() {
-  const testimonials = [
-    { text: "Growthwapi helped our clinic reduce no-shows by 60% with automated appointment reminders. Our patients love the WhatsApp updates!", name: "Dr. Priya Sharma", loc: "Delhi", icon: "🏥" },
-    { text: "Our salon bookings doubled after we started sending WhatsApp broadcasts with Growthwapi. The template builder is incredibly easy to use.", name: "Neha Kapoor", loc: "Mumbai", icon: "💇" },
-    { text: "The AI chatbot handles 80% of customer queries automatically. It's a complete game changer for our e-commerce business.", name: "Rahul Mehta", loc: "Bangalore", icon: "🛒" },
-  ]
+  const testimonials = CLIENT_COMPANIES
   const [active, setActive] = useState(0)
   const [paused, setPaused] = useState(false)
   const [fading, setFading] = useState(false)
@@ -246,44 +301,79 @@ function TestimonialSlider() {
   const goTo = (i) => {
     if (i === active) return
     setFading(true)
-    setTimeout(() => { setActive(i); setFading(false) }, 400)
+    setTimeout(() => { setActive(i); setFading(false) }, 300)
   }
 
   useEffect(() => {
     if (paused) return
-    const t = setInterval(() => goTo((active + 1) % testimonials.length), 4000)
+    const t = setInterval(() => goTo((active + 1) % testimonials.length), 4500)
     return () => clearInterval(t)
-  }, [active, paused])
+  }, [active, paused, testimonials.length])
 
   const t = testimonials[active]
   return (
-    <div className="relative max-w-2xl mx-auto" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+    <div className="relative max-w-3xl mx-auto" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
       {/* Prev */}
       <button onClick={() => goTo((active - 1 + testimonials.length) % testimonials.length)}
-        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 w-9 h-9 rounded-full bg-white border border-gray-200 shadow flex items-center justify-center text-gray-500 hover:text-[#F97316] transition-colors z-10">
+        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 sm:-translate-x-12 w-10 h-10 rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center text-gray-600 hover:text-[#F97316] hover:scale-110 transition-all z-10"
+        title="Previous Review">
         ‹
       </button>
       {/* Next */}
       <button onClick={() => goTo((active + 1) % testimonials.length)}
-        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 w-9 h-9 rounded-full bg-white border border-gray-200 shadow flex items-center justify-center text-gray-500 hover:text-[#F97316] transition-colors z-10">
+        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 sm:translate-x-12 w-10 h-10 rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center text-gray-600 hover:text-[#F97316] hover:scale-110 transition-all z-10"
+        title="Next Review">
         ›
       </button>
-      <div className={`bg-white rounded-3xl p-8 md:p-10 shadow-lg border border-gray-100 transition-opacity duration-400 ${fading ? 'opacity-0' : 'opacity-100'}`}>
-        <div className="text-5xl mb-4">{t.icon}</div>
-        <p className="text-gray-700 text-lg leading-relaxed mb-6 italic">"{t.text}"</p>
-        <div>
-          <div className="font-bold text-gray-900">{t.name}</div>
-          <div className="text-sm text-gray-400">{t.loc}</div>
+      <div className={`bg-white rounded-3xl p-7 sm:p-10 shadow-xl border border-gray-100 transition-opacity duration-300 ${fading ? 'opacity-0' : 'opacity-100'}`}>
+        <div className="flex items-center justify-between gap-4 mb-6">
+          <div className="flex gap-1 text-[#F97316] text-xl">
+            {'★★★★★'.split('').map((s, i) => <span key={i}>{s}</span>)}
+          </div>
+          <a
+            href={t.website}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={`Visit ${t.company} (${t.displayUrl})`}
+            className="flex items-center gap-2.5 px-3.5 py-1.5 bg-gray-50 hover:bg-orange-50 border border-gray-200 hover:border-[#F97316]/50 rounded-xl transition-all group"
+          >
+            <div className="h-7 w-20 flex items-center justify-center">
+              <img src={t.logo} alt={t.company} className="max-h-7 max-w-full object-contain" onError={e => { e.target.style.display = 'none' }} />
+            </div>
+            <span className="text-xs font-bold text-[#1E3A5F] group-hover:text-[#F97316] hidden sm:inline">{t.displayUrl} ↗</span>
+          </a>
         </div>
-        <div className="flex gap-1 mt-4">
-          {'★★★★★'.split('').map((s, i) => <span key={i} className="text-[#F97316]">{s}</span>)}
+        <p className="text-gray-700 text-base sm:text-lg leading-relaxed mb-8 italic">"{t.text}"</p>
+        <div className="flex items-center justify-between border-t border-gray-100 pt-5">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-orange-500 to-amber-400 text-white font-black text-base flex items-center justify-center shadow-md shrink-0">
+              {t.avatarInitials}
+            </div>
+            <div>
+              <div className="font-extrabold text-gray-900 text-base">{t.founder}</div>
+              <div className="text-xs text-gray-500 font-medium">{t.role}</div>
+              <a
+                href={t.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-[#F97316] hover:underline font-bold inline-flex items-center gap-1 mt-0.5"
+              >
+                <span>{t.company}</span>
+                <span className="text-[10px]">↗</span>
+              </a>
+            </div>
+          </div>
+          <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold hidden sm:inline-flex items-center gap-1">
+            ✓ Verified Client
+          </span>
         </div>
       </div>
       {/* Dots */}
       <div className="flex justify-center gap-2 mt-6">
         {testimonials.map((_, i) => (
           <button key={i} onClick={() => goTo(i)}
-            className={`w-2 h-2 rounded-full transition-all duration-300 ${i === active ? 'bg-[#F97316] w-5' : 'bg-gray-300'}`} />
+            className={`h-2 rounded-full transition-all duration-300 ${i === active ? 'bg-[#F97316] w-6' : 'bg-gray-300 w-2'}`}
+            title={`Slide ${i + 1}`} />
         ))}
       </div>
     </div>
@@ -292,15 +382,47 @@ function TestimonialSlider() {
 
 // ─── MARQUEE ───
 function Marquee() {
-  const items = ['Clinics','Salons','Coaching Centers','Restaurants','Real Estate','E-commerce','Retail Stores','Travel Agencies','Gyms & Fitness','Law Firms']
-  const doubled = [...items, ...items]
+  // Repeat list 4 times for seamless continuous marquee loop
+  const repeated = [...CLIENT_COMPANIES, ...CLIENT_COMPANIES, ...CLIENT_COMPANIES, ...CLIENT_COMPANIES]
   return (
-    <div className="overflow-hidden relative group">
-      <div className="flex gap-4 animate-marquee group-hover:[animation-play-state:paused]" style={{ width: 'max-content' }}>
-        {doubled.map((item, i) => (
-          <span key={i} className="px-5 py-2 bg-white border border-[#1E3A5F]/20 rounded-full text-[#1E3A5F] font-semibold text-sm shadow-sm whitespace-nowrap cursor-default hover:border-[#F97316] hover:text-[#F97316] transition-colors">
-            {item}
-          </span>
+    <div className="overflow-hidden relative group py-2">
+      {/* Gradient fade edges */}
+      <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+
+      <div className="flex gap-5 animate-marquee group-hover:[animation-play-state:paused]" style={{ width: 'max-content' }}>
+        {repeated.map((item, i) => (
+          <a
+            key={i}
+            href={item.website}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={`Visit ${item.company} (${item.displayUrl})`}
+            className="flex items-center gap-4 px-5 py-3.5 bg-white border border-gray-200/90 rounded-2xl shadow-2xs hover:shadow-lg hover:border-[#F97316] hover:-translate-y-1 transition-all duration-300 group/card shrink-0 cursor-pointer"
+          >
+            <div className="h-11 w-28 sm:w-32 flex items-center justify-center p-1 bg-gray-50/70 rounded-xl border border-gray-100">
+              <img
+                src={item.logo}
+                alt={item.company}
+                className="max-h-9 max-w-full object-contain transition-transform duration-300 group-hover/card:scale-105"
+                onError={(e) => { e.target.style.display = 'none' }}
+              />
+            </div>
+            <div className="flex flex-col text-left">
+              <div className="flex items-center gap-1.5">
+                <span className="font-black text-sm text-[#1E3A5F] group-hover/card:text-[#F97316] transition-colors whitespace-nowrap">
+                  {item.company}
+                </span>
+                <span className="text-xs text-gray-400 group-hover/card:text-[#F97316] transition-colors">↗</span>
+              </div>
+              <span className="text-[11px] text-gray-500 font-medium whitespace-nowrap">
+                {item.founder} ({item.role})
+              </span>
+              <span className="text-[10px] text-[#F97316] font-semibold whitespace-nowrap">
+                {item.displayUrl}
+              </span>
+            </div>
+          </a>
         ))}
       </div>
     </div>
@@ -664,9 +786,13 @@ export default function LandingPage() {
         </section>
 
         {/* ── MARQUEE ── */}
-        <section ref={marqueeRef} className="py-16 bg-white overflow-hidden">
-          <div className="max-w-7xl mx-auto px-6 mb-8">
-            <h2 className="text-center text-2xl font-black text-[#1E3A5F]">Trusted by businesses across India</h2>
+        <section ref={marqueeRef} className="py-16 bg-white overflow-hidden border-b border-gray-100">
+          <div className="max-w-7xl mx-auto px-6 mb-8 text-center">
+            <span className="text-[#F97316] font-bold text-xs uppercase tracking-widest bg-orange-50 px-3.5 py-1.5 rounded-full border border-orange-200 inline-block mb-3">
+              ✦ Verified Clients & Partners
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black text-[#1E3A5F]">Trusted by businesses across India</h2>
+            <p className="text-gray-500 text-sm mt-2">Click any brand logo to visit their official website</p>
           </div>
           <Marquee />
         </section>

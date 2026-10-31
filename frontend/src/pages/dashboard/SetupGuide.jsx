@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 import {
   ExternalLink,
   Copy,
@@ -22,8 +23,14 @@ import {
 import toast from 'react-hot-toast'
 
 export default function SetupGuide() {
+  const { user } = useAuth()
   const [activeTab, setActiveTab] = useState('fast') // 'fast' | 'billing' | 'verification' | 'manual'
   const [copiedKey, setCopiedKey] = useState('')
+
+  const hasSetupSupport = Boolean(
+    user?.referred_by || user?.referred_code || user?.referred_onboarding_support
+  )
+  const referrerCode = user?.referred_code || ''
 
   const copyToClipboard = (text, key) => {
     navigator.clipboard.writeText(text)
@@ -71,6 +78,21 @@ export default function SetupGuide() {
           </div>
         </div>
       </div>
+
+      {/* Partner 1-on-1 Setup Support Banner */}
+      {hasSetupSupport && (
+        <div className="bg-gradient-to-r from-[#25D366]/10 to-emerald-50 border border-[#25D366]/40 rounded-2xl p-4 flex items-start gap-3">
+          <span className="text-2xl">🤝</span>
+          <div>
+            <p className="text-sm font-black text-emerald-800">You have 1-on-1 Partner Setup Support!</p>
+            <p className="text-xs text-emerald-700 font-medium mt-0.5 leading-relaxed">
+              Your Growthwapi partner ({referrerCode ? `Code: ${referrerCode}` : 'your referrer'}) is available to personally guide you through
+              this entire WhatsApp Business API setup and Meta account configuration.
+              Reach out to them directly on WhatsApp for dedicated assistance.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Navigation Tabs */}
       <div className="flex items-center gap-2 border-b border-gray-200 pb-2 overflow-x-auto scrollbar-none">

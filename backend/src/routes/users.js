@@ -203,6 +203,7 @@ router.get('/active-plan', auth, async (req, res) => {
       const daysRemaining = Math.max(0, Math.ceil((endDate - now) / (1000 * 60 * 60 * 24)));
       const pkg = activeSub.plan_type || user.package_type || 'starter';
       const quota = PLAN_QUOTAS[pkg] || PLAN_QUOTAS.starter;
+      const bonusMessages = Number(activeSub.bonus_messages || user.referral_bonus_messages || 0);
 
       return res.json({
         plan: pkg.toUpperCase(),
@@ -216,7 +217,11 @@ router.get('/active-plan', auth, async (req, res) => {
         utilityUsed,
         utilityQuota: quota.utility,
         marketingUsed,
-        marketingQuota: quota.marketing,
+        marketingQuota: quota.marketing + bonusMessages,
+        baseMarketingQuota: quota.marketing,
+        bonusMessages,
+        hasReferralOffer: bonusMessages > 0,
+        hasSetupSupport: Boolean(user.referred_by || user.referred_code || user.referred_onboarding_support),
         isPaid: true,
         isTrial: false,
         isExpired: activeSub.status === 'expired' || now > endDate,
@@ -243,6 +248,8 @@ router.get('/active-plan', auth, async (req, res) => {
       utilityQuota: TRIAL_CAPS.utility,
       marketingUsed,
       marketingQuota: TRIAL_CAPS.marketing,
+      hasSetupSupport: Boolean(user.referred_by || user.referred_code || user.referred_onboarding_support),
+      referredCode: user.referred_code || null,
       isPaid: false,
       isTrial: !isExpired && user.account_status === 'trial',
       isExpired,

@@ -46,6 +46,20 @@ const COMMISSION_SCHEDULE = {
 };
 
 /**
+ * Referral Client Perks:
+ * 1. Bonus Free Messages on 1st paid subscription only (never renewals or upgrades)
+ *    - Starter: +200 messages
+ *    - Growth: +300 messages
+ *    - Pro: +500 messages
+ * 2. Full 1-on-1 WhatsApp Business Onboarding & Setup Support by Referrer
+ */
+const REFERRAL_BONUS_MESSAGES = {
+  starter: 200,
+  growth: 300,
+  pro: 500
+};
+
+/**
  * Check and process affiliate commission whenever a client pays for a subscription.
  * Called automatically from payments.js after subscription verification.
  * 
@@ -72,6 +86,28 @@ async function processSubscriptionAffiliateCommission(clientId, planType, subscr
 
     const nextMonthNumber = (referral.total_months_paid || 0) + 1;
     const commissionAmount = planSchedule[nextMonthNumber];
+
+    // One-time referral client offer: bonus messages on 1st paid plan purchase only
+    let bonusMessagesAwarded = 0;
+    if ((referral.total_months_paid || 0) === 0) {
+      bonusMessagesAwarded = REFERRAL_BONUS_MESSAGES[normalizedPlan] || 0;
+      if (bonusMessagesAwarded > 0) {
+        if (subscriptionId) {
+          await supabaseAdmin
+            .from('subscriptions')
+            .update({ bonus_messages: bonusMessagesAwarded })
+            .eq('id', subscriptionId);
+        }
+        await supabaseAdmin
+          .from('users')
+          .update({
+            referral_bonus_messages: bonusMessagesAwarded,
+            referred_onboarding_support: true
+          })
+          .eq('id', clientId);
+        console.log(`[Affiliate Perks] Awarded +${bonusMessagesAwarded} bonus messages and 1-on-1 setup support to client ${clientId}`);
+      }
+    }
 
     // Check if max reward months are already reached
     if (!commissionAmount || commissionAmount <= 0) {
@@ -191,6 +227,16 @@ async function registerClientReferral(newClientId, referralCode) {
       return null;
     }
 
+    // Attach referrer metadata to client's profile for 1-on-1 setup support
+    await supabaseAdmin
+      .from('users')
+      .update({
+        referred_by: affiliate.user_id,
+        referred_code: cleanCode,
+        referred_onboarding_support: true
+      })
+      .eq('id', newClientId);
+
     return created;
   } catch (err) {
     console.error('Error registering referral:', err);
@@ -200,6 +246,7 @@ async function registerClientReferral(newClientId, referralCode) {
 
 module.exports = {
   COMMISSION_SCHEDULE,
+  REFERRAL_BONUS_MESSAGES,
   processSubscriptionAffiliateCommission,
   registerClientReferral
 };

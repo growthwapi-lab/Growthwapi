@@ -457,6 +457,26 @@ export default function AffiliateProgram() {
           </p>
         </div>
 
+        {/* Client Perks to Pitch */}
+        <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-2xl p-4 space-y-2">
+          <p className="text-xs font-black text-emerald-700 flex items-center gap-1.5">🎁 What Your Clients Get (Exclusive Referral Perks to Pitch!)</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-emerald-800">
+            <div className="bg-white/70 rounded-xl p-2.5 space-y-1 border border-emerald-100">
+              <p className="font-black">💬 Bonus Free Messages (1st plan only)</p>
+              <p>Starter: <span className="font-black text-emerald-700">+200 msgs</span></p>
+              <p>Growth: <span className="font-black text-emerald-700">+300 msgs</span></p>
+              <p>Pro: <span className="font-black text-emerald-700">+500 msgs</span></p>
+            </div>
+            <div className="bg-white/70 rounded-xl p-2.5 space-y-1 border border-emerald-100">
+              <p className="font-black">🤝 1-on-1 Setup Support by You</p>
+              <p className="text-emerald-700 leading-relaxed">
+                Every client you refer gets <strong>your personal WhatsApp Business onboarding</strong> &amp; Meta API setup assistance — that's your value-add that no one else offers!
+              </p>
+            </div>
+          </div>
+          <p className="text-[10px] text-emerald-600 opacity-70">*Bonus messages auto-applied on first plan purchase. Setup support is provided by you as the referring partner.</p>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Tier 1: Starter */}
           <div className="p-4 rounded-2xl border border-gray-200 bg-gray-50/50 space-y-3">

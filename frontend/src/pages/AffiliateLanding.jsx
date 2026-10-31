@@ -459,6 +459,32 @@ export default function AffiliateLanding() {
               </div>
             ))}
           </div>
+
+          {/* Exclusive Client Perks — pitch card for affiliates */}
+          <div className="bg-gradient-to-r from-emerald-600 to-green-700 rounded-3xl p-6 text-white space-y-4">
+            <div>
+              <p className="text-xs font-bold text-emerald-200 uppercase tracking-wider mb-1">🎁 Exclusive — Your Biggest Selling Point</p>
+              <h3 className="text-lg font-black leading-snug">What Your Referred Clients Get (That Nobody Else Offers)</h3>
+              <p className="text-xs text-emerald-100 mt-1">Use these perks as your pitch — this is what makes your referral link irresistible!</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-white/15 backdrop-blur rounded-2xl p-4 space-y-2">
+                <p className="text-sm font-black">💬 Bonus Free Messages on 1st Plan</p>
+                <div className="text-xs text-emerald-100 space-y-1">
+                  <div className="flex justify-between"><span>Starter Plan:</span><span className="font-bold text-white">+200 messages</span></div>
+                  <div className="flex justify-between"><span>Growth Plan:</span><span className="font-bold text-white">+300 messages</span></div>
+                  <div className="flex justify-between"><span>Pro Plan:</span><span className="font-bold text-white">+500 messages</span></div>
+                </div>
+                <p className="text-[10px] text-emerald-200">*One-time bonus on first purchase only, auto-applied.</p>
+              </div>
+              <div className="bg-white/15 backdrop-blur rounded-2xl p-4 space-y-2">
+                <p className="text-sm font-black">🤝 1-on-1 Setup by You (The Partner)</p>
+                <p className="text-xs text-emerald-100 leading-relaxed">
+                  Every client you refer gets <strong>your personal onboarding assistance</strong> — WhatsApp Business setup, Meta API connection, and initial account configuration. Your expertise is their biggest benefit.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

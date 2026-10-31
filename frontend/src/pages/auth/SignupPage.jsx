@@ -183,7 +183,33 @@ export default function SignupPage() {
               value={formData.referralCode} onChange={handleChange}
             />
           </div>
-          
+
+          {/* Referral Offer Unlock Banner */}
+          {formData.referralCode && (
+            <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-3.5 space-y-2.5">
+              <p className="text-xs font-black text-emerald-700 flex items-center gap-1.5">
+                🎁 Partner Referral Unlocks:
+              </p>
+              <div className="space-y-1.5">
+                <div className="flex items-start gap-2">
+                  <span className="text-emerald-500 text-sm mt-0.5">✓</span>
+                  <p className="text-xs text-emerald-800 font-semibold leading-snug">
+                    <span className="text-emerald-700 font-black">Bonus Free Messages</span> on your 1st plan purchase —
+                    Starter <span className="font-black">+200</span> · Growth <span className="font-black">+300</span> · Pro <span className="font-black">+500</span>
+                  </p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-emerald-500 text-sm mt-0.5">✓</span>
+                  <p className="text-xs text-emerald-800 font-semibold leading-snug">
+                    <span className="text-emerald-700 font-black">1-on-1 Setup Support</span> — Your partner will personally onboard you
+                    and set up your WhatsApp Business API & Meta account.
+                  </p>
+                </div>
+              </div>
+              <p className="text-[10px] text-emerald-600 opacity-80">*Bonus messages on first plan purchase only. Setup support by your referring partner.</p>
+            </div>
+          )}
+
           <button
             type="submit" disabled={loading}
             className="w-full bg-brand-blue text-white py-2.5 rounded-lg font-bold hover:bg-blue-900 transition-colors mt-6 disabled:opacity-50"

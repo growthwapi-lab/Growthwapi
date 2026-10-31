@@ -433,13 +433,18 @@ function Marquee() {
 export default function LandingPage() {
   const [searchParams] = useSearchParams()
   const refCode = searchParams.get('ref')
+  const [activeRefCode, setActiveRefCode] = useState('')
 
   // Capture referral code from URL and persist in localStorage + track click
   useEffect(() => {
-    if (refCode) {
-      const cleanCode = refCode.trim().toUpperCase()
+    const code = refCode || localStorage.getItem('gw_referral_code') || ''
+    if (code) {
+      const cleanCode = code.trim().toUpperCase()
+      setActiveRefCode(cleanCode)
       localStorage.setItem('gw_referral_code', cleanCode)
-      api.post('/api/affiliate/track-click', { code: cleanCode }).catch(() => {})
+      if (refCode) {
+        api.post('/api/affiliate/track-click', { code: cleanCode }).catch(() => {})
+      }
     }
   }, [refCode])
 
@@ -588,6 +593,23 @@ export default function LandingPage() {
           <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center w-full">
             {/* Text */}
             <div>
+
+              {/* VIP Referral Welcome Banner — shown only when ?ref= or saved code */}
+              {activeRefCode && (
+                <div className="mb-4 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-2xl px-4 py-3 flex items-start gap-3 shadow-lg">
+                  <span className="text-2xl">🎁</span>
+                  <div>
+                    <p className="text-sm font-black leading-snug">You were referred by a Growthwapi Partner!</p>
+                    <p className="text-xs font-medium text-emerald-100 mt-0.5 leading-snug">
+                      You unlock: <strong>bonus free messages</strong> on your 1st plan + <strong>1-on-1 WhatsApp setup assistance</strong> by your partner.
+                    </p>
+                    <Link to={`/signup?ref=${activeRefCode}`} className="inline-block mt-1.5 text-[11px] font-black bg-white text-emerald-700 px-3 py-1 rounded-full hover:bg-emerald-50 transition-colors">
+                      Sign Up & Claim Your Perks →
+                    </Link>
+                  </div>
+                </div>
+              )}
+
               {/* Badge */}
               <div className={`flex flex-wrap items-center gap-2 mb-4 transition-all duration-600 ease-out ${heroVisible || prefersReduced ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
                 style={{ transitionDelay: '0ms' }}>
@@ -737,7 +759,12 @@ export default function LandingPage() {
                     <li key={f} className="flex items-center gap-2"><span className="text-green-500 font-bold">✓</span> {f}</li>
                   ))}
                 </ul>
-                <RippleButton to="/signup" className="block text-center w-full border-2 border-[#1E3A5F] text-[#1E3A5F] py-3 rounded-xl font-bold hover:bg-[#1E3A5F] hover:text-white transition-all">
+                {activeRefCode && (
+                  <div className="mb-4 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2 text-xs text-emerald-700 font-semibold flex items-center gap-1.5">
+                    🎁 Partner Perk: <span className="font-black">+200 Bonus Messages</span> on 1st purchase
+                  </div>
+                )}
+                <RippleButton to={activeRefCode ? `/signup?ref=${activeRefCode}` : '/signup'} className="block text-center w-full border-2 border-[#1E3A5F] text-[#1E3A5F] py-3 rounded-xl font-bold hover:bg-[#1E3A5F] hover:text-white transition-all">
                   Get Started
                 </RippleButton>
               </div>
@@ -758,7 +785,12 @@ export default function LandingPage() {
                     <li key={f} className="flex items-center gap-2"><span className="text-[#F97316] font-bold">✓</span> {f}</li>
                   ))}
                 </ul>
-                <RippleButton to="/signup" className="block text-center w-full bg-[#F97316] text-white py-3 rounded-xl font-bold hover:bg-orange-600 transition-all shadow-lg shadow-orange-200">
+                {activeRefCode && (
+                  <div className="mb-4 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2 text-xs text-emerald-700 font-semibold flex items-center gap-1.5">
+                    🎁 Partner Perk: <span className="font-black">+300 Bonus Messages</span> on 1st purchase
+                  </div>
+                )}
+                <RippleButton to={activeRefCode ? `/signup?ref=${activeRefCode}` : '/signup'} className="block text-center w-full bg-[#F97316] text-white py-3 rounded-xl font-bold hover:bg-orange-600 transition-all shadow-lg shadow-orange-200">
                   Get Started
                 </RippleButton>
               </div>
@@ -774,13 +806,21 @@ export default function LandingPage() {
                     <li key={f} className="flex items-center gap-2"><span className="text-green-500 font-bold">✓</span> {f}</li>
                   ))}
                 </ul>
-                <RippleButton to="/signup" className="block text-center w-full border-2 border-[#1E3A5F] text-[#1E3A5F] py-3 rounded-xl font-bold hover:bg-[#1E3A5F] hover:text-white transition-all">
+                {activeRefCode && (
+                  <div className="mb-4 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2 text-xs text-emerald-700 font-semibold flex items-center gap-1.5">
+                    🎁 Partner Perk: <span className="font-black">+500 Bonus Messages</span> on 1st purchase
+                  </div>
+                )}
+                <RippleButton to={activeRefCode ? `/signup?ref=${activeRefCode}` : '/signup'} className="block text-center w-full border-2 border-[#1E3A5F] text-[#1E3A5F] py-3 rounded-xl font-bold hover:bg-[#1E3A5F] hover:text-white transition-all">
                   Get Started
                 </RippleButton>
               </div>
             </div>
             <div className="text-center mt-8 text-gray-500 text-sm space-y-1">
               <p>✓ All plans include 4-day free trial. No credit card required to start.</p>
+              {activeRefCode && (
+                <p className="text-emerald-600 font-semibold">🎁 Referred by a partner? Bonus messages applied automatically on first purchase!</p>
+              )}
               <p>Extra messages: ₹0.25/utility msg &nbsp;·&nbsp; ₹1.75/marketing msg after quota.</p>
             </div>
           </div>

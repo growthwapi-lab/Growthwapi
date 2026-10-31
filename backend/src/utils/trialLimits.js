@@ -101,6 +101,8 @@ async function checkTrialCap(userId, category = 'utility', count = 1) {
   if (sub) {
     const pkg = sub.plan_type || user.package_type || 'starter';
     const quota = PLAN_QUOTAS[pkg] || PLAN_QUOTAS.starter;
+    const bonusMessages = Number(sub.bonus_messages || user.referral_bonus_messages || 0);
+    const effectiveMarketingQuota = quota.marketing + bonusMessages;
     const { utilityUsed, marketingUsed } = await getMonthlyUsage(userId);
     const cat = (category || 'utility').toLowerCase();
 
@@ -118,7 +120,7 @@ async function checkTrialCap(userId, category = 'utility', count = 1) {
       if (balance <= 0) {
         return { allowed: false, message: 'Monthly utility message quota exceeded. Please recharge your wallet for overage.' };
       }
-    } else if (cat === 'marketing' && marketingUsed + count > quota.marketing) {
+    } else if (cat === 'marketing' && marketingUsed + count > effectiveMarketingQuota) {
       const { data: usageLog } = await supabaseAdmin
         .from('usage_logs')
         .select('wallet_balance')

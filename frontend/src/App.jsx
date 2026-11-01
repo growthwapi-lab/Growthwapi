@@ -22,6 +22,9 @@ import AffiliateLanding from './pages/AffiliateLanding'
 import TeamMembers from './pages/dashboard/TeamMembers'
 import SetupGuide from './pages/dashboard/SetupGuide'
 import GettingStarted from './pages/dashboard/GettingStarted'
+import PrivacyPolicy from './pages/PrivacyPolicy'
+import TermsOfService from './pages/TermsOfService'
+import DataDeletion from './pages/DataDeletion'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
@@ -39,6 +42,12 @@ function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/terms-of-service" element={<TermsOfService />} />
+      <Route path="/terms" element={<TermsOfService />} />
+      <Route path="/data-deletion" element={<DataDeletion />} />
+      <Route path="/user-data-deletion" element={<DataDeletion />} />
       
       <Route path="/dashboard" element={
         <ProtectedRoute>

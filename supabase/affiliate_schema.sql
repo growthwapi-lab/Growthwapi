@@ -77,3 +77,27 @@ CREATE INDEX IF NOT EXISTS idx_affiliate_profiles_code ON public.affiliate_profi
 CREATE INDEX IF NOT EXISTS idx_affiliate_referrals_affiliate ON public.affiliate_referrals(affiliate_user_id);
 CREATE INDEX IF NOT EXISTS idx_affiliate_referrals_client ON public.affiliate_referrals(referred_client_id);
 CREATE INDEX IF NOT EXISTS idx_affiliate_commissions_affiliate ON public.affiliate_commissions(affiliate_user_id);
+
+-- ============================================================
+-- ROW LEVEL SECURITY (RLS) POLICIES
+-- ============================================================
+ALTER TABLE public.affiliate_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.affiliate_referrals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.affiliate_commissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.affiliate_payouts ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view own affiliate profile" ON public.affiliate_profiles;
+CREATE POLICY "Users can view own affiliate profile" ON public.affiliate_profiles
+  FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can view own referrals" ON public.affiliate_referrals;
+CREATE POLICY "Users can view own referrals" ON public.affiliate_referrals
+  FOR SELECT USING (auth.uid() = affiliate_user_id);
+
+DROP POLICY IF EXISTS "Users can view own commissions" ON public.affiliate_commissions;
+CREATE POLICY "Users can view own commissions" ON public.affiliate_commissions
+  FOR SELECT USING (auth.uid() = affiliate_user_id);
+
+DROP POLICY IF EXISTS "Users can view own payouts" ON public.affiliate_payouts;
+CREATE POLICY "Users can view own payouts" ON public.affiliate_payouts
+  FOR SELECT USING (auth.uid() = affiliate_user_id);

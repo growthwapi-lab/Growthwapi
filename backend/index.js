@@ -38,7 +38,8 @@ app.use(cors({
   },
   credentials: true
 }));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 app.get('/', (req, res) => {
   res.json({ message: 'Growthwapi API is running', version: '1.0.0' });
@@ -59,8 +60,11 @@ app.use('/api', developerRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Something broke!' });
+  console.error('Server error:', err);
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'File is too large. Please select a file under 15MB.' });
+  }
+  res.status(err.status || 500).json({ error: err.message || 'Something went wrong on the server.' });
 });
 
 const PORT = process.env.PORT || 5000;

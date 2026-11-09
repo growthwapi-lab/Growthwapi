@@ -11,12 +11,13 @@ const router = express.Router();
 async function getUserWhatsAppConfig(userId, userEmail) {
   const { data: userProfile } = await supabaseAdmin
     .from('users')
-    .select('whatsapp_phone_number_id, whatsapp_waba_id, email')
+    .select('whatsapp_phone_number_id, whatsapp_waba_id, email, whatsapp_access_token')
     .eq('id', userId)
     .maybeSingle();
 
   const phoneId = userProfile?.whatsapp_phone_number_id;
   const wabaId = userProfile?.whatsapp_waba_id;
+  const accessToken = userProfile?.whatsapp_access_token || process.env.WHATSAPP_ACCESS_TOKEN;
   const email = (userProfile?.email || userEmail || '').toLowerCase();
 
   // 1. If user has connected their own WhatsApp Business account
@@ -24,13 +25,13 @@ async function getUserWhatsAppConfig(userId, userEmail) {
     return {
       phoneId,
       wabaId: wabaId || process.env.WHATSAPP_WABA_ID,
-      accessToken: process.env.WHATSAPP_ACCESS_TOKEN,
+      accessToken,
       isConnected: true,
     };
   }
 
-  // 2. Fallback ONLY for system admin (sauravrai8757@gmail.com)
-  if (email === 'sauravrai8757@gmail.com' && process.env.WHATSAPP_PHONE_NUMBER_ID) {
+  // 2. Fallback for system admin accounts
+  if ((email === 'sauravrai8757@gmail.com' || email === 'growthwapi@gmail.com') && process.env.WHATSAPP_PHONE_NUMBER_ID) {
     return {
       phoneId: process.env.WHATSAPP_PHONE_NUMBER_ID,
       wabaId: process.env.WHATSAPP_WABA_ID,

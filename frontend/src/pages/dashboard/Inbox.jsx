@@ -464,7 +464,7 @@ export default function Inbox() {
 
     // 2. Document / PDF
     const docObj = content?.document || (m.message_type === 'document' ? content : null)
-    if (docObj && (docObj.id || docObj.url || docObj.link)) {
+    if (docObj && (docObj.id || docObj.url || docObj.link || docObj.filename)) {
       const docId = docObj.id
       const docSrc = docId ? `${baseURL}/api/whatsapp/media-proxy/${docId}` : docObj.url || docObj.link
       const filename = docObj.filename || 'Document.pdf'

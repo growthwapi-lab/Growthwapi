@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Fragment } from 'react'
 import {
   Send,
   User,
@@ -39,6 +39,75 @@ function StatusTick({ status }) {
   return <Clock className="w-3.5 h-3.5 text-gray-400 inline shrink-0 animate-pulse" title="Sending..." />
 }
 
+// Helper to format conversation time in sidebar list
+function formatConversationTime(dateStr) {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  if (isNaN(date.getTime())) return ''
+
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const msgDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  const diffDays = Math.round((today - msgDay) / (1000 * 60 * 60 * 24))
+
+  if (diffDays === 0) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  }
+  if (diffDays === 1) {
+    return 'Yesterday'
+  }
+  if (diffDays < 7) {
+    return date.toLocaleDateString([], { weekday: 'short' })
+  }
+  if (date.getFullYear() === now.getFullYear()) {
+    return date.toLocaleDateString([], { day: 'numeric', month: 'short' })
+  }
+  return date.toLocaleDateString([], { day: '2-digit', month: '2-digit', year: '2-digit' })
+}
+
+// Helper to format center date divider pill in chat thread (e.g. Today, Yesterday, 18 Nov)
+function formatDateDivider(dateStr) {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  if (isNaN(date.getTime())) return ''
+
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const msgDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  const diffDays = Math.round((today - msgDay) / (1000 * 60 * 60 * 24))
+
+  if (diffDays === 0) return 'Today'
+  if (diffDays === 1) return 'Yesterday'
+  if (date.getFullYear() === now.getFullYear()) {
+    return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+  }
+  return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+// Helper to format time inside individual message bubbles (e.g. 10:30 AM or 18 Nov, 10:30 AM)
+function formatBubbleTime(dateStr) {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  if (isNaN(date.getTime())) return ''
+
+  const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const msgDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  const diffDays = Math.round((today - msgDay) / (1000 * 60 * 60 * 24))
+
+  if (diffDays === 0) {
+    return timeStr
+  }
+  if (diffDays === 1) {
+    return `Yesterday, ${timeStr}`
+  }
+  if (date.getFullYear() === now.getFullYear()) {
+    return `${date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}, ${timeStr}`
+  }
+  return `${date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' })}, ${timeStr}`
+}
+
 function groupMessagesToConversations(msgList) {
   const grouped = {}
   msgList.forEach((m) => {
@@ -66,7 +135,7 @@ function groupMessagesToConversations(msgList) {
         name: phone,
         phone,
         lastMessage: getSnippet(),
-        time: new Date(m.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        time: formatConversationTime(m.sent_at),
         sent_at: m.sent_at,
         needsHuman: false,
         messages: [],
@@ -163,7 +232,7 @@ export default function Inbox() {
             phone: phone,
             name: phone,
             lastMessage: getSnippet(),
-            time: new Date(m.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            time: formatConversationTime(m.sent_at),
             sent_at: m.sent_at,
             needsHuman: false,
             messages: [],
@@ -262,7 +331,7 @@ export default function Inbox() {
       return {
         ...prev,
         lastMessage: fileToSend ? (fileToSend.type.startsWith('image/') ? '📷 Photo' : '📄 File') : textToSend,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        time: formatConversationTime(new Date()),
         messages: [optimisticMsg, ...(prev.messages || [])]
       }
     })
@@ -715,79 +784,98 @@ export default function Inbox() {
 
             {/* Chat Thread */}
             <div className="flex-1 p-3 sm:p-6 overflow-y-auto flex flex-col gap-3">
-              {activeConv.messages
-                .slice()
-                .reverse()
-                .map((m, idx) => {
+              {(() => {
+                const chronological = activeConv.messages.slice().reverse()
+                let lastDateKey = null
+
+                return chronological.map((m, idx) => {
                   const isOutbound = m.direction === 'outbound'
                   const isSelected = selectedMsgIds.has(m.id)
 
+                  const msgDate = new Date(m.sent_at)
+                  const dateKey = !isNaN(msgDate.getTime()) ? msgDate.toDateString() : null
+                  const showDateDivider = dateKey && dateKey !== lastDateKey
+                  if (dateKey) lastDateKey = dateKey
+
                   return (
-                    <div
-                      key={m.id || idx}
-                      onClick={() => {
-                        if (isSelectMode && m.id && !String(m.id).startsWith('temp_')) {
-                          toggleSelectMessage(m.id)
-                        }
-                      }}
-                      className={`group max-w-[85%] sm:max-w-[75%] p-3 rounded-2xl text-sm relative shadow-xs transition-all ${
-                        isSelectMode ? 'cursor-pointer select-none' : ''
-                      } ${
-                        isSelected
-                          ? 'ring-2 ring-brand-blue ring-offset-2 scale-[1.01]'
-                          : ''
-                      } ${
-                        isOutbound
-                          ? 'self-end bg-[#d9fdd3] text-gray-900 rounded-tr-none border border-emerald-100'
-                          : 'self-start bg-white text-gray-900 rounded-tl-none border border-gray-200'
-                      }`}
-                    >
-                      {/* Checkbox row in select mode */}
-                      {isSelectMode && (
-                        <div className="mb-2 flex items-center gap-2 pb-1.5 border-b border-black/5 text-xs">
-                          {isSelected ? (
-                            <CheckSquare className="w-4 h-4 text-brand-blue shrink-0" />
-                          ) : (
-                            <Square className="w-4 h-4 text-gray-400 shrink-0" />
-                          )}
-                          <span className="text-[11px] font-medium text-gray-600">
-                            {isSelected ? 'Selected' : 'Click to select'}
+                    <Fragment key={m.id || idx}>
+                      {showDateDivider && (
+                        <div className="self-center my-2 select-none">
+                          <span className="bg-gray-100 text-gray-600 text-[11px] font-semibold px-3 py-1 rounded-full shadow-2xs border border-gray-200">
+                            {formatDateDivider(m.sent_at)}
                           </span>
                         </div>
                       )}
 
-                      {/* Rich Content: Image / Document / Text */}
-                      {renderMessageContent(m)}
+                      <div
+                        onClick={() => {
+                          if (isSelectMode && m.id && !String(m.id).startsWith('temp_')) {
+                            toggleSelectMessage(m.id)
+                          }
+                        }}
+                        className={`group max-w-[85%] sm:max-w-[75%] p-3 rounded-2xl text-sm relative shadow-xs transition-all ${
+                          isSelectMode ? 'cursor-pointer select-none' : ''
+                        } ${
+                          isSelected
+                            ? 'ring-2 ring-brand-blue ring-offset-2 scale-[1.01]'
+                            : ''
+                        } ${
+                          isOutbound
+                            ? 'self-end bg-[#d9fdd3] text-gray-900 rounded-tr-none border border-emerald-100'
+                            : 'self-start bg-white text-gray-900 rounded-tl-none border border-gray-200'
+                        }`}
+                      >
+                        {/* Checkbox row in select mode */}
+                        {isSelectMode && (
+                          <div className="mb-2 flex items-center gap-2 pb-1.5 border-b border-black/5 text-xs">
+                            {isSelected ? (
+                              <CheckSquare className="w-4 h-4 text-brand-blue shrink-0" />
+                            ) : (
+                              <Square className="w-4 h-4 text-gray-400 shrink-0" />
+                            )}
+                            <span className="text-[11px] font-medium text-gray-600">
+                              {isSelected ? 'Selected' : 'Click to select'}
+                            </span>
+                          </div>
+                        )}
 
-                      <div className="flex items-center justify-end gap-1.5 mt-1.5">
-                        {/* Hover Delete Button for this single message (when not in select mode) */}
-                        {!isSelectMode && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleDeleteMessage(m.id)
-                            }}
-                            className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-red-600 rounded transition-opacity"
-                            title="Delete message"
+                        {/* Rich Content: Image / Document / Text */}
+                        {renderMessageContent(m)}
+
+                        <div className="flex items-center justify-end gap-1.5 mt-1.5">
+                          {/* Hover Delete Button for this single message (when not in select mode) */}
+                          {!isSelectMode && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDeleteMessage(m.id)
+                              }}
+                              className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-red-600 rounded transition-opacity"
+                              title="Delete message"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+
+                          {m.needs_human && (
+                            <span className="text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-100 mr-1">
+                              Needs Attention
+                            </span>
+                          )}
+                          <span
+                            className="text-[11px] text-gray-500 font-mono whitespace-nowrap"
+                            title={new Date(m.sent_at).toLocaleString('en-IN', { dateStyle: 'full', timeStyle: 'short' })}
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-
-                        {m.needs_human && (
-                          <span className="text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-100 mr-1">
-                            Needs Attention
+                            {formatBubbleTime(m.sent_at)}
                           </span>
-                        )}
-                        <span className="text-[11px] text-gray-500 font-mono">
-                          {new Date(m.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                        {isOutbound && <StatusTick status={m.status} />}
+                          {isOutbound && <StatusTick status={m.status} />}
+                        </div>
                       </div>
-                    </div>
+                    </Fragment>
                   )
-                })}
+                })
+              })()}
               <div ref={messagesEndRef} />
             </div>
 

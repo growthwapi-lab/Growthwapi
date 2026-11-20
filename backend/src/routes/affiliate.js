@@ -56,16 +56,16 @@ router.get('/profile', auth, async (req, res) => {
           pending_balance: 0.00,
           paid_balance: 0.00,
           total_clicks: 0,
-          is_approved: isSuperAdmin,
-          is_paid_member: isSuperAdmin
+          is_approved: true,
+          is_paid_member: true
         })
         .select()
         .single();
 
       if (createErr) throw createErr;
       profile = newProfile;
-    } else if (isSuperAdmin && !profile.is_paid_member) {
-      // Ensure super admin is always active
+    } else if (!profile.is_paid_member || !profile.is_approved) {
+      // 100% Free Lifetime Partner - Auto-activate all existing partners
       await supabaseAdmin
         .from('affiliate_profiles')
         .update({ is_paid_member: true, is_approved: true })
@@ -74,23 +74,6 @@ router.get('/profile', auth, async (req, res) => {
       profile.is_approved = true;
     }
 
-    // Auto-activate partner if user already has an active WhatsApp plan
-    const { data: activeSub } = await supabaseAdmin
-      .from('subscriptions')
-      .select('id')
-      .eq('user_id', req.user.id)
-      .eq('status', 'active')
-      .neq('payment_for', 'wallet_recharge')
-      .in('plan_type', ['starter', 'growth', 'pro'])
-      .maybeSingle();
-    if (activeSub && !profile.is_paid_member) {
-      await supabaseAdmin
-        .from('affiliate_profiles')
-        .update({ is_paid_member: true, is_approved: true })
-        .eq('id', profile.id);
-      profile.is_paid_member = true;
-      profile.is_approved = true;
-    }
     res.json({
       profile,
       commissionSchedule: COMMISSION_SCHEDULE
@@ -222,25 +205,14 @@ router.get('/dashboard', auth, async (req, res) => {
       .eq('user_id', userId)
       .maybeSingle();
 
-    // Auto-activate if user holds an active WhatsApp plan
-    if (profile && !profile.is_paid_member) {
-      const { data: activeSub } = await supabaseAdmin
-        .from('subscriptions')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('status', 'active')
-        .neq('payment_for', 'wallet_recharge')
-        .in('plan_type', ['starter', 'growth', 'pro'])
-        .maybeSingle();
-
-      if (activeSub) {
-        await supabaseAdmin
-          .from('affiliate_profiles')
-          .update({ is_paid_member: true, is_approved: true })
-          .eq('id', profile.id);
-        profile.is_paid_member = true;
-        profile.is_approved = true;
-      }
+    // Auto-activate partner - 100% Free Lifetime access
+    if (profile && (!profile.is_paid_member || !profile.is_approved)) {
+      await supabaseAdmin
+        .from('affiliate_profiles')
+        .update({ is_paid_member: true, is_approved: true })
+        .eq('id', profile.id);
+      profile.is_paid_member = true;
+      profile.is_approved = true;
     }
 
     // 2. Referrals list (with client profile info)
@@ -313,27 +285,13 @@ router.post('/request-payout', auth, async (req, res) => {
       return res.status(404).json({ error: 'Affiliate profile not found.' });
     }
 
-    if (!profile.is_paid_member) {
-      // Auto-activate if user already has an active WhatsApp subscription
-      const { data: activeSub } = await supabaseAdmin
-        .from('subscriptions')
-        .select('id')
-        .eq('user_id', req.user.id)
-        .eq('status', 'active')
-        .neq('payment_for', 'wallet_recharge')
-        .in('plan_type', ['starter', 'growth', 'pro'])
-        .maybeSingle();
-
-      if (activeSub) {
-        await supabaseAdmin
-          .from('affiliate_profiles')
-          .update({ is_paid_member: true, is_approved: true })
-          .eq('id', profile.id);
-        profile.is_paid_member = true;
-        profile.is_approved = true;
-      } else {
-        return res.status(403).json({ error: 'Please activate your partner account (₹200 one-time fee) to request payouts.' });
-      }
+    if (!profile.is_paid_member || !profile.is_approved) {
+      await supabaseAdmin
+        .from('affiliate_profiles')
+        .update({ is_paid_member: true, is_approved: true })
+        .eq('id', profile.id);
+      profile.is_paid_member = true;
+      profile.is_approved = true;
     }
 
     if (Number(profile.pending_balance) < requestedAmount) {

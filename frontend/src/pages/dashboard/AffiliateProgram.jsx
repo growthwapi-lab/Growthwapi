@@ -229,13 +229,13 @@ export default function AffiliateProgram() {
           <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 flex flex-col gap-2 shrink-0">
             <div className="flex items-center justify-between gap-3">
               <span className="text-[11px] font-bold text-orange-100 uppercase tracking-wider">Your Partner Code</span>
-              {profile?.is_paid_member || activePlan?.plan ? (
+              {profile?.is_paid_member ? (
                 <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-100 border border-emerald-300/30 text-[10px] font-bold inline-flex items-center gap-1">
-                  <CheckCircle2 size={11} /> VIP Active
+                  <CheckCircle2 size={11} /> Active Partner
                 </span>
               ) : (
-                <span className="px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-100 border border-amber-300/30 text-[10px] font-bold inline-flex items-center gap-1">
-                  <AlertCircle size={11} /> ₹200 Pending
+                <span className="px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-100 border border-emerald-300/30 text-[10px] font-bold inline-flex items-center gap-1">
+                  <CheckCircle2 size={11} /> Free Partner
                 </span>
               )}
             </div>
@@ -254,40 +254,6 @@ export default function AffiliateProgram() {
           </div>
         </div>
       </div>
-
-      {/* Activation Paywall Banner if not yet paid AND no active WhatsApp plan */}
-      {!profile?.is_paid_member && !activePlan?.plan && (
-        <div className="bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border-2 border-brand-orange/40 rounded-3xl p-6 sm:p-7 shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
-          <div className="space-y-1.5 max-w-xl">
-            <div className="flex items-center gap-2">
-              <span className="p-2 bg-brand-orange text-white rounded-xl shadow-xs">
-                <Sparkles size={18} />
-              </span>
-              <h2 className="text-lg font-black text-gray-900">
-                Activate Your Partner Account — ₹200 One-time Lifetime Fee
-              </h2>
-            </div>
-            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-              Pay the one-time <b>₹200</b> lifetime activation fee once. This activates your verified partner status, unlocks your tracking link, and allows you to earn up to <b>₹2,325</b> recurring commission per client with instant UPI & Bank payouts!
-            </p>
-          </div>
-
-          <button
-            onClick={handleActivatePartner}
-            disabled={activating}
-            className="w-full md:w-auto px-7 py-4 bg-brand-orange hover:bg-orange-600 text-white font-black text-sm rounded-2xl shadow-xl shadow-orange-300 transition-all transform hover:scale-105 shrink-0 flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {activating ? (
-              <span>Opening Payment Gateway...</span>
-            ) : (
-              <>
-                <span>Pay ₹200 & Activate Partner Account</span>
-                <ArrowRight size={16} />
-              </>
-            )}
-          </button>
-        </div>
-      )}
 
       {/* Referral Link Sharing Bar */}
       <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-2xs space-y-3">

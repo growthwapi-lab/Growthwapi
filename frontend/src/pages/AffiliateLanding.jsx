@@ -59,8 +59,8 @@ export default function AffiliateLanding() {
       a: 'Not at all! You do not need any WhatsApp API or developer background. Simply share your unique referral link with business owners, retail shops, or marketing agencies. Growthwapi handles all client onboarding, customer support, and server infrastructure.'
     },
     {
-      q: 'Why is there a one-time ₹200 fee to become an Affiliate Partner?',
-      a: 'The ₹200 is a one-time lifetime verification fee designed to filter out spam bots and ensure high-intent partners. It unlocks your dedicated partner dashboard, custom live click tracking link, marketing assets, and automated direct UPI/Bank withdrawal system. No monthly or renewal fees ever.'
+      q: 'Is it completely free to become an Affiliate Partner?',
+      a: 'Yes, 100% Free! Joining the Growthwapi Partner Program requires zero investment. You get instant access to your dedicated partner dashboard, custom live click tracking link, marketing assets, and automated direct UPI/Bank withdrawal system. No registration fee or renewal charges ever.'
     },
     {
       q: 'When and how do I receive my commissions?',
@@ -88,7 +88,7 @@ export default function AffiliateLanding() {
           onClick={handleCtaClick}
           className="underline font-bold text-amber-300 hover:text-white transition-colors ml-1 hidden sm:inline"
         >
-          Join for ₹200 →
+          Join for Free →
         </button>
       </div>
 
@@ -117,7 +117,7 @@ export default function AffiliateLanding() {
               onClick={handleCtaClick}
               className="px-4 sm:px-5 py-2.5 bg-brand-orange hover:bg-orange-600 text-white text-xs sm:text-sm font-extrabold rounded-xl shadow-md shadow-orange-200 transition-all transform hover:-translate-y-0.5 flex items-center gap-1.5"
             >
-              <span>Join for ₹200</span>
+              <span>Join for Free</span>
               <ArrowRight size={15} />
             </button>
           </div>
@@ -151,22 +151,22 @@ export default function AffiliateLanding() {
           <div className="inline-block bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-lg shadow-gray-100 mb-8 max-w-xl mx-auto">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="text-left">
-                <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">One-Time Lifetime Fee</div>
+                <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Registration & Membership</div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-black text-brand-blue">₹200</span>
+                  <span className="text-3xl font-black text-emerald-600">FREE</span>
                   <span className="text-xs text-gray-400 line-through">₹999</span>
-                  <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                    80% OFF Today
+                  <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                    100% Free Lifetime Access
                   </span>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Zero monthly renewals • Lifetime tracking & payouts</p>
+                <p className="text-xs text-gray-500 mt-1">Zero investment • Instant link activation • UPI/Bank payouts</p>
               </div>
 
               <button
                 onClick={handleCtaClick}
                 className="w-full sm:w-auto px-6 py-3.5 bg-brand-orange hover:bg-orange-600 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-orange-300/50 transition-all transform hover:scale-105 flex items-center justify-center gap-2"
               >
-                <span>Activate Partner Account</span>
+                <span>Join Partner Program Free</span>
                 <ArrowRight size={16} />
               </button>
             </div>
@@ -275,7 +275,7 @@ export default function AffiliateLanding() {
                 onClick={handleCtaClick}
                 className="w-full sm:w-auto px-6 py-3.5 bg-brand-orange hover:bg-orange-600 text-white text-xs sm:text-sm font-black rounded-xl shadow-lg shadow-orange-900/40 transition-all shrink-0"
               >
-                Join for ₹200 & Start Earning →
+                Join Free & Start Earning →
               </button>
             </div>
           </div>
@@ -433,8 +433,8 @@ export default function AffiliateLanding() {
             {[
               {
                 step: '01',
-                title: 'Register & Pay ₹200',
-                desc: 'Sign up and pay the ₹200 one-time lifetime fee. Instant VIP Partner account verification is unlocked.'
+                title: 'Register Free in 60s',
+                desc: 'Sign up for free. Instant Partner account verification and custom tracking link unlocked.'
               },
               {
                 step: '02',
@@ -533,7 +533,7 @@ export default function AffiliateLanding() {
             Start Your Passive Income Journey with Growthwapi Today
           </h2>
           <p className="text-sm sm:text-base text-blue-100 max-w-xl mx-auto">
-            Pay just ₹200 one-time to become a verified Growthwapi Partner and earn recurring commissions transferred directly to your UPI or Bank.
+            Join 100% free to become a verified Growthwapi Partner and earn recurring commissions transferred directly to your UPI or Bank.
           </p>
 
           <div className="pt-2">
@@ -541,7 +541,7 @@ export default function AffiliateLanding() {
               onClick={handleCtaClick}
               className="px-8 py-4 bg-brand-orange hover:bg-orange-600 text-white font-extrabold text-base rounded-2xl shadow-xl shadow-orange-950/50 transition-all transform hover:scale-105 inline-flex items-center gap-2"
             >
-              <span>Join Partner Program (₹200)</span>
+              <span>Join Partner Program (100% Free)</span>
               <ArrowRight size={18} />
             </button>
           </div>

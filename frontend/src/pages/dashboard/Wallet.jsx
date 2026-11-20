@@ -343,7 +343,10 @@ export default function Wallet() {
               </>
             )}
           </div>
-          <p className="text-xs text-gray-400 mt-4">Powered by Razorpay — Test Mode Active</p>
+          <p className="text-xs text-gray-400 mt-4 flex items-center gap-1.5">
+            <ShieldCheck size={14} className="text-emerald-600 inline" />
+            100% Safe & Secure Payments powered by Razorpay
+          </p>
         </div>
       </div>
 
@@ -444,9 +447,9 @@ export default function Wallet() {
           })}
         </div>
 
-        <p className="text-xs text-gray-400 mt-6 text-center">
-          <AlertCircle size={12} className="inline mr-1" />
-          Razorpay Test Mode is active. Use test cards (4111 1111 1111 1111) for instant verification.
+        <p className="text-xs text-gray-500 mt-6 text-center flex items-center justify-center gap-1.5">
+          <ShieldCheck size={14} className="text-emerald-600 inline" />
+          Secured by Razorpay. All major UPI, Credit/Debit cards & Net Banking supported.
         </p>
       </div>
     </div>

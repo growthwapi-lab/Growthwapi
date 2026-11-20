@@ -19,61 +19,72 @@ function generateReferralCode(email, name) {
   return `GW-${base || 'VIP'}-${rand}`;
 }
 
+// Helper to get or auto-create unique affiliate profile for any user
+async function getOrCreateAffiliateProfile(user) {
+  const userId = user.id;
+  const userEmail = (user.email || '').toLowerCase();
+  const userName = user.user_metadata?.name || '';
+
+  let { data: profile } = await supabaseAdmin
+    .from('affiliate_profiles')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (!profile) {
+    let code = generateReferralCode(userEmail, userName);
+
+    // Verify code uniqueness in DB
+    const { data: existingCode } = await supabaseAdmin
+      .from('affiliate_profiles')
+      .select('id')
+      .eq('referral_code', code)
+      .maybeSingle();
+
+    if (existingCode) {
+      code = `${code}${Math.floor(10 + Math.random() * 90)}`;
+    }
+
+    const { data: newProfile, error: createErr } = await supabaseAdmin
+      .from('affiliate_profiles')
+      .insert({
+        user_id: userId,
+        referral_code: code,
+        total_earnings: 0.00,
+        pending_balance: 0.00,
+        paid_balance: 0.00,
+        total_clicks: 0,
+        is_approved: true,
+        is_paid_member: true
+      })
+      .select()
+      .single();
+
+    if (createErr) {
+      console.error('Error creating affiliate profile:', createErr);
+      throw createErr;
+    }
+    return newProfile;
+  }
+
+  // Auto-activate existing profiles for 100% Free Lifetime access
+  if (!profile.is_paid_member || !profile.is_approved) {
+    const { data: updated } = await supabaseAdmin
+      .from('affiliate_profiles')
+      .update({ is_paid_member: true, is_approved: true })
+      .eq('id', profile.id)
+      .select()
+      .single();
+    if (updated) profile = updated;
+  }
+
+  return profile;
+}
+
 // 1. GET /api/affiliate/profile - Get or create affiliate partner account
 router.get('/profile', auth, async (req, res) => {
   try {
-    const userEmail = (req.user.email || '').toLowerCase();
-    const isSuperAdmin = ADMIN_EMAILS.includes(userEmail);
-
-    let { data: profile, error } = await supabaseAdmin
-      .from('affiliate_profiles')
-      .select('*')
-      .eq('user_id', req.user.id)
-      .maybeSingle();
-
-    if (!profile) {
-      // Auto-create affiliate profile on first visit
-      const userName = req.user.user_metadata?.name || '';
-      let code = generateReferralCode(userEmail, userName);
-
-      // Verify code uniqueness
-      const { data: existingCode } = await supabaseAdmin
-        .from('affiliate_profiles')
-        .select('id')
-        .eq('referral_code', code)
-        .maybeSingle();
-
-      if (existingCode) {
-        code = `${code}${Math.floor(10 + Math.random() * 90)}`;
-      }
-
-      const { data: newProfile, error: createErr } = await supabaseAdmin
-        .from('affiliate_profiles')
-        .insert({
-          user_id: req.user.id,
-          referral_code: code,
-          total_earnings: 0.00,
-          pending_balance: 0.00,
-          paid_balance: 0.00,
-          total_clicks: 0,
-          is_approved: true,
-          is_paid_member: true
-        })
-        .select()
-        .single();
-
-      if (createErr) throw createErr;
-      profile = newProfile;
-    } else if (!profile.is_paid_member || !profile.is_approved) {
-      // 100% Free Lifetime Partner - Auto-activate all existing partners
-      await supabaseAdmin
-        .from('affiliate_profiles')
-        .update({ is_paid_member: true, is_approved: true })
-        .eq('id', profile.id);
-      profile.is_paid_member = true;
-      profile.is_approved = true;
-    }
-
+    const profile = await getOrCreateAffiliateProfile(req.user);
     res.json({
       profile,
       commissionSchedule: COMMISSION_SCHEDULE
@@ -198,22 +209,8 @@ router.get('/dashboard', auth, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // 1. Profile
-    let { data: profile } = await supabaseAdmin
-      .from('affiliate_profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    // Auto-activate partner - 100% Free Lifetime access
-    if (profile && (!profile.is_paid_member || !profile.is_approved)) {
-      await supabaseAdmin
-        .from('affiliate_profiles')
-        .update({ is_paid_member: true, is_approved: true })
-        .eq('id', profile.id);
-      profile.is_paid_member = true;
-      profile.is_approved = true;
-    }
+    // 1. Profile (Auto-create if first visit, 100% Free Lifetime)
+    const profile = await getOrCreateAffiliateProfile(req.user);
 
     // 2. Referrals list (with client profile info)
     const { data: referrals } = await supabaseAdmin

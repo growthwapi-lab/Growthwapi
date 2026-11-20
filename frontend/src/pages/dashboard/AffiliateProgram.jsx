@@ -91,9 +91,9 @@ export default function AffiliateProgram() {
   const commissions = data?.commissions || []
   const payouts = data?.payouts || []
 
-  const referralCode = profile?.referral_code || 'GW-PARTNER'
+  const referralCode = profile?.referral_code || ''
   const appOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://growthwapi.in'
-  const partnerLink = `${appOrigin}?ref=${referralCode}`
+  const partnerLink = referralCode ? `${appOrigin}?ref=${referralCode}` : ''
 
   const copyToClipboard = (text, type) => {
     navigator.clipboard.writeText(text)

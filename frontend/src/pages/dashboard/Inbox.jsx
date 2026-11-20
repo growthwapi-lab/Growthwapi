@@ -617,13 +617,13 @@ export default function Inbox() {
       bodyText = content?.text?.body || ''
     }
 
-    return <p className="whitespace-pre-wrap leading-relaxed">{bodyText}</p>
+    return <p className="whitespace-pre-wrap leading-relaxed break-words [overflow-wrap:anywhere]">{bodyText}</p>
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex h-[calc(100vh-7.5rem)] sm:h-[calc(100vh-8rem)]">
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex w-full max-w-full h-[calc(100vh-7.5rem)] sm:h-[calc(100vh-8rem)]">
       {/* Conversations List (On mobile: full-width when activeConv is null, hidden when chat is open; On desktop: always visible as sidebar) */}
-      <div className={`w-full md:w-80 lg:w-96 border-r border-gray-200 flex-col bg-gray-50/50 shrink-0 ${
+      <div className={`w-full md:w-80 lg:w-96 border-r border-gray-200 flex-col bg-gray-50/50 shrink-0 min-w-0 ${
         activeConv ? 'hidden md:flex' : 'flex'
       }`}>
         <div className="p-3.5 sm:p-4 border-b border-gray-200 bg-white flex justify-between items-center">
@@ -680,14 +680,14 @@ export default function Inbox() {
       </div>
 
       {/* Chat Area (On mobile: full-width when activeConv is open, hidden when null; On desktop: always visible) */}
-      <div className={`flex-1 flex-col bg-[#efeae2]/40 relative ${
+      <div className={`flex-1 flex-col bg-[#efeae2]/40 relative min-w-0 w-full max-w-full overflow-hidden ${
         activeConv ? 'flex' : 'hidden md:flex'
       }`}>
         {activeConv ? (
           <>
             {/* Active Chat Header */}
             {isSelectMode ? (
-              <div className="p-2.5 sm:p-3.5 border-b border-blue-200 flex items-center justify-between bg-blue-50/95 shadow-xs z-10 animate-in fade-in duration-150 gap-2">
+              <div className="p-2.5 sm:p-3.5 border-b border-blue-200 flex items-center justify-between bg-blue-50/95 shadow-xs z-10 animate-in fade-in duration-150 gap-2 w-full min-w-0">
                 <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                   <button
                     onClick={() => {
@@ -722,7 +722,7 @@ export default function Inbox() {
                 </div>
               </div>
             ) : (
-              <div className="p-2.5 sm:p-3.5 border-b border-gray-200 flex items-center justify-between bg-white shadow-xs z-10 gap-2">
+              <div className="p-2.5 sm:p-3.5 border-b border-gray-200 flex items-center justify-between bg-white shadow-xs z-10 gap-2 w-full min-w-0">
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                   {/* WhatsApp-style Back button on mobile */}
                   <button
@@ -783,7 +783,7 @@ export default function Inbox() {
             )}
 
             {/* Chat Thread */}
-            <div className="flex-1 p-3 sm:p-6 overflow-y-auto flex flex-col gap-3">
+            <div className="flex-1 p-2 sm:p-6 overflow-y-auto overflow-x-hidden flex flex-col gap-3 w-full min-w-0">
               {(() => {
                 const chronological = activeConv.messages.slice().reverse()
                 let lastDateKey = null
@@ -813,7 +813,7 @@ export default function Inbox() {
                             toggleSelectMessage(m.id)
                           }
                         }}
-                        className={`group max-w-[85%] sm:max-w-[75%] p-3 rounded-2xl text-sm relative shadow-xs transition-all ${
+                        className={`group max-w-[85%] sm:max-w-[75%] p-2.5 sm:p-3 rounded-2xl text-sm relative shadow-xs transition-all break-words [overflow-wrap:anywhere] ${
                           isSelectMode ? 'cursor-pointer select-none' : ''
                         } ${
                           isSelected
@@ -905,8 +905,8 @@ export default function Inbox() {
             )}
 
             {/* Send Reply Form (WhatsApp Web Bar with Attachment) */}
-            <div className="p-3.5 border-t border-gray-200 bg-white">
-              <form onSubmit={handleSend} className="flex items-center gap-2">
+            <div className="p-2 sm:p-3.5 border-t border-gray-200 bg-white w-full min-w-0">
+              <form onSubmit={handleSend} className="flex items-center gap-1.5 sm:gap-2 w-full min-w-0">
                 {/* Hidden File Input */}
                 <input
                   type="file"
@@ -920,7 +920,7 @@ export default function Inbox() {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="p-2 text-gray-500 hover:text-brand-blue hover:bg-gray-100 rounded-xl transition-all shrink-0"
+                  className="p-1.5 sm:p-2 text-gray-500 hover:text-brand-blue hover:bg-gray-100 rounded-xl transition-all shrink-0"
                   title="Attach Photo or Document"
                 >
                   <Paperclip size={20} />
@@ -931,14 +931,14 @@ export default function Inbox() {
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder={selectedFile ? 'Add a caption...' : 'Type a message...'}
-                  className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-blue outline-none text-sm transition-all"
+                  className="flex-1 min-w-0 px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-blue outline-none text-sm transition-all"
                   autoFocus
                 />
 
                 <button
                   type="submit"
                   disabled={!newMessage.trim() && !selectedFile}
-                  className="bg-brand-blue hover:bg-blue-900 text-white p-2.5 rounded-xl transition-all shadow-xs disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center shrink-0"
+                  className="bg-brand-blue hover:bg-blue-900 text-white p-2 sm:p-2.5 rounded-xl transition-all shadow-xs disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center shrink-0"
                   title="Send"
                 >
                   <Send size={18} />

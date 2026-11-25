@@ -498,8 +498,8 @@ export default function LandingPage() {
   const faqs = [
     { q: 'What is Growthwapi?', a: 'Growthwapi is an official WhatsApp Business API platform that lets businesses automate messaging, manage contacts, run bulk broadcasts, and deploy AI chatbots — all from one dashboard.' },
     { q: 'Do I need a WhatsApp Business Account?', a: 'Yes, you need a WhatsApp Business API account connected through Meta. We guide you through the entire setup process during onboarding.' },
-    { q: 'Is there a free trial?', a: 'Yes! Every new account gets a 4-day free trial with a limited message quota. No credit card required to start.' },
-    { q: 'What happens after my monthly quota is exhausted?', a: 'When your plan quota runs out, extra messages are billed at ₹0.25 per utility message and ₹1.75 per marketing message from your wallet balance.' },
+    { q: 'Is there a free trial?', a: 'Yes! Every new account gets a 7-day free trial with 50 utility and 30 marketing messages. No credit card required to start.' },
+    { q: 'What happens after my monthly quota is exhausted?', a: 'Messages are billed transparently from your prepaid wallet balance at just ₹0.25 per utility message and ₹0.95 per marketing message.' },
     { q: 'Can I use the AI chatbot on any plan?', a: 'The AI WhatsApp Agent is available on Growth (500 AI replies/mo) and Pro (2,000 AI replies/mo) plans. Starter plan users can upgrade anytime.' },
     { q: 'Is my data secure?', a: 'Yes. All data is stored securely with enterprise-grade encryption and row-level security. Messages are transmitted via Meta\'s official encrypted WhatsApp API. We never store message content beyond what\'s necessary for inbox display.' },
   ]
@@ -532,6 +532,18 @@ export default function LandingPage() {
       {showPreloader && !preloaderDone && <Preloader onDone={handlePreloaderDone} />}
 
       <div className="min-h-screen font-sans text-gray-900 overflow-x-hidden">
+
+        {/* ── LAUNCH ANNOUNCEMENT BANNER ── */}
+        <div className="w-full bg-gradient-to-r from-[#1E3A5F] via-[#1a3356] to-[#1E3A5F] text-white text-center py-2.5 px-4 relative overflow-hidden z-[60]">
+          <div className="absolute inset-0 opacity-10" style={{background: 'repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(249,115,22,0.3) 40px, rgba(249,115,22,0.3) 41px)'}} />
+          <div className="relative max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-4 text-xs sm:text-sm">
+            <span className="font-black text-[#F97316] text-sm sm:text-base">🚀 GRAND LAUNCH: 10 December 2026</span>
+            <span className="hidden sm:inline text-white/40">|</span>
+            <span className="text-white/90 font-medium">Live from <span className="font-bold text-white">1 December</span> · Use code <span className="font-black text-[#F97316] bg-white/10 px-2 py-0.5 rounded-md tracking-wider">LAUNCH50</span> for Flat <span className="font-black text-[#25D366]">50% OFF</span> · Limited Time Only</span>
+            <span className="hidden sm:inline text-white/40">|</span>
+            <span className="text-white/80 font-medium">🏆 <span className="font-bold text-yellow-300">First 10 Founders</span> get a Special Mystery Gift — <span className="italic">To Be Announced!</span></span>
+          </div>
+        </div>
 
         {/* ── NAVBAR ── */}
         <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white shadow-[0_2px_20px_rgba(0,0,0,0.08)]' : 'bg-transparent'}`}>
@@ -646,7 +658,7 @@ export default function LandingPage() {
                   ▶ Watch Demo
                 </button>
               </div>
-              <p className="text-sm text-gray-400 mt-4">✓ 4-day free trial &nbsp;·&nbsp; ✓ No credit card required</p>
+              <p className="text-sm text-gray-400 mt-4">✓ 7-day free trial &nbsp;·&nbsp; ✓ No credit card required</p>
             </div>
             {/* Mockup */}
             <div className={`transition-all duration-700 ease-out ${heroVisible || prefersReduced ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-12'}`}
@@ -755,7 +767,7 @@ export default function LandingPage() {
                 <h3 className="text-xl font-bold text-[#1E3A5F] mb-1">Starter</h3>
                 <div className="text-4xl font-black text-gray-900 mb-6">₹999<span className="text-lg font-normal text-gray-400">/mo</span></div>
                 <ul className="space-y-3 mb-8 text-gray-600">
-                  {['1,000 Utility Messages/mo','500 Marketing Messages/mo','Basic Inbox','1 Team Member','Template Manager'].map(f => (
+                  {['Official Meta WhatsApp API','Shared Team Inbox','1 Team Member Seat','Template Approval Manager','Unlimited Contacts CRM','Direct Wallet Messaging'].map(f => (
                     <li key={f} className="flex items-center gap-2"><span className="text-green-500 font-bold">✓</span> {f}</li>
                   ))}
                 </ul>
@@ -781,7 +793,7 @@ export default function LandingPage() {
                 <h3 className="text-xl font-bold text-[#1E3A5F] mb-1">Growth</h3>
                 <div className="text-4xl font-black text-gray-900 mb-6">₹2999<span className="text-lg font-normal text-gray-400">/mo</span></div>
                 <ul className="space-y-3 mb-8 text-gray-600">
-                  {['5,000 Utility Messages/mo','2,000 Marketing Messages/mo','Smart Inbox & Broadcasts','5 Team Members','AI Agent (500 replies/mo)','Advanced Analytics'].map(f => (
+                  {['Official Meta WhatsApp API','Shared Multi-Agent Team Inbox','5 Team Member Seats','24/7 AI Smart Bot (500 replies/mo)','Bulk Broadcasts Engine','Advanced Analytics & Reports'].map(f => (
                     <li key={f} className="flex items-center gap-2"><span className="text-[#F97316] font-bold">✓</span> {f}</li>
                   ))}
                 </ul>
@@ -802,7 +814,7 @@ export default function LandingPage() {
                 <h3 className="text-xl font-bold text-[#1E3A5F] mb-1">Pro</h3>
                 <div className="text-4xl font-black text-gray-900 mb-6">₹7999<span className="text-lg font-normal text-gray-400">/mo</span></div>
                 <ul className="space-y-3 mb-8 text-gray-600">
-                  {['20,000 Utility Messages/mo','10,000 Marketing Messages/mo','Everything in Growth','Unlimited Team Members','AI Agent (2,000 replies/mo)','Priority Support + API Access'].map(f => (
+                  {['Official Meta WhatsApp API','Everything in Growth Plan','Unlimited Team Member Seats','24/7 AI Smart Bot (2,000 replies/mo)','Developer REST API & Webhooks','Priority 1-on-1 Dedicated Support'].map(f => (
                     <li key={f} className="flex items-center gap-2"><span className="text-green-500 font-bold">✓</span> {f}</li>
                   ))}
                 </ul>
@@ -817,11 +829,11 @@ export default function LandingPage() {
               </div>
             </div>
             <div className="text-center mt-8 text-gray-500 text-sm space-y-1">
-              <p>✓ All plans include 4-day free trial. No credit card required to start.</p>
+              <p>✓ All plans include 7-day free trial. No credit card required to start.</p>
               {activeRefCode && (
-                <p className="text-emerald-600 font-semibold">🎁 Referred by a partner? Bonus messages applied automatically on first purchase!</p>
+                <p className="text-emerald-600 font-semibold">🎁 Referred by a partner? Bonus perks applied automatically on first purchase!</p>
               )}
-              <p>Extra messages: ₹0.25/utility msg &nbsp;·&nbsp; ₹1.75/marketing msg after quota.</p>
+              <p className="text-xs text-gray-400">💬 Official Meta conversation charges apply separately via transparent prepaid wallet recharge (at Meta actuals).</p>
             </div>
           </div>
         </section>

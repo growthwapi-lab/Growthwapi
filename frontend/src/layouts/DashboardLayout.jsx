@@ -4,6 +4,43 @@ import { MessageSquare, Users, Send, BarChart2, Wallet, Settings, LogOut, Menu, 
 import { useAuth } from '../contexts/AuthContext'
 import api from '../lib/api'
 
+function LaunchOfferCountdown({ deadline, isUrgent, isExpiredTrial }) {
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 })
+
+  useEffect(() => {
+    const calculateTime = () => {
+      const diff = Math.max(0, new Date(deadline) - new Date())
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+      setTimeLeft({ days, hours, minutes, seconds })
+    }
+    calculateTime()
+    const timer = setInterval(calculateTime, 1000)
+    return () => clearInterval(timer)
+  }, [deadline])
+
+  return (
+    <div className={`${isUrgent ? 'bg-gradient-to-r from-red-600 via-orange-600 to-red-600 animate-pulse' : 'bg-gradient-to-r from-orange-600 via-amber-600 to-orange-600'} text-white px-4 py-2 text-xs sm:text-sm font-medium text-center flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4 shadow-md z-10`}>
+      <div className="flex items-center gap-2 flex-wrap justify-center">
+        <span className="font-black text-yellow-300">⚡ GRAND LAUNCH 50% OFF:</span>
+        <span>
+          {isExpiredTrial 
+            ? 'Aapka Exclusive Launch Offer expire ho raha hai!' 
+            : 'Pre-Registration Launch Offer is LIVE!'} Use code <span className="font-black underline bg-white/20 px-1.5 py-0.5 rounded">LAUNCH50</span>
+        </span>
+        <span className="bg-black/30 px-2 py-0.5 rounded-lg font-mono font-black text-yellow-200 text-xs">
+          {timeLeft.days > 0 ? `${timeLeft.days}d ` : ''}{String(timeLeft.hours).padStart(2, '0')}h:{String(timeLeft.minutes).padStart(2, '0')}m:{String(timeLeft.seconds).padStart(2, '0')}s
+        </span>
+      </div>
+      <Link to="/dashboard/wallet" className="bg-white text-orange-600 hover:bg-orange-50 px-3 py-1 rounded-lg text-xs font-black shadow-xs transition-transform transform hover:scale-105 shrink-0">
+        Claim 50% OFF Now →
+      </Link>
+    </div>
+  )
+}
+
 export default function DashboardLayout() {
   const { user, signOut } = useAuth()
   const location = useLocation()
@@ -112,11 +149,18 @@ export default function DashboardLayout() {
             <Link to="/" className="flex items-center gap-2">
               <img src="/logo.png.png" alt="Growthwapi" className="h-7 object-contain" />
             </Link>
-            {activePlan?.badgeText && (
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${activePlan.isPaid ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'}`}>
-                {activePlan.badgeText}
-              </span>
-            )}
+            <div className="flex items-center gap-1.5">
+              {activePlan?.isFounderMember && (
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 text-gray-900 border border-yellow-300 shadow-2xs" title="Growthwapi Original Founder Member">
+                  🏆 Founder #{activePlan.founderRank}
+                </span>
+              )}
+              {activePlan?.badgeText && (
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${activePlan.isPaid ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'}`}>
+                  {activePlan.badgeText}
+                </span>
+              )}
+            </div>
             <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-gray-500">
               <X size={24} />
             </button>
@@ -174,6 +218,15 @@ export default function DashboardLayout() {
           <span className="ml-4 font-bold text-brand-dark">Dashboard</span>
         </header>
 
+        {/* Launch Urgency Countdown Banner */}
+        {activePlan?.launchOffer?.active && (
+          <LaunchOfferCountdown 
+            deadline={activePlan.launchOffer.deadline}
+            isUrgent={activePlan.launchOffer.isUrgent}
+            isExpiredTrial={activePlan.launchOffer.isExpiredTrial}
+          />
+        )}
+
         {/* Trial / Paused Banner */}
         {showPausedBanner && (
           <div className="bg-red-500 text-white px-4 py-2 text-sm font-medium text-center flex justify-center items-center gap-4">
@@ -186,7 +239,7 @@ export default function DashboardLayout() {
         {showTrialBanner && (
           <div className="bg-brand-purple text-white px-4 py-2 text-sm font-medium text-center flex justify-center items-center gap-4 flex-wrap">
             <span>
-              🚀 <strong>Free Trial:</strong> {activePlan?.utilityUsed ?? 0}/{activePlan?.utilityQuota ?? 50} utility, {activePlan?.marketingUsed ?? 0}/{activePlan?.marketingQuota ?? 20} marketing messages used | {activePlan?.daysRemaining ?? 0} day{activePlan?.daysRemaining !== 1 ? 's' : ''} left.
+              🚀 <strong>Free Trial:</strong> {activePlan?.utilityUsed ?? 0}/{activePlan?.utilityQuota ?? 50} utility, {activePlan?.marketingUsed ?? 0}/{activePlan?.marketingQuota ?? 30} marketing messages used | {activePlan?.daysRemaining ?? 0} day{activePlan?.daysRemaining !== 1 ? 's' : ''} left.
             </span>
             <Link to="/dashboard/wallet" className="bg-white text-brand-purple px-3 py-1 rounded-md text-xs font-bold hover:bg-gray-100 transition-colors">
               Upgrade Plan

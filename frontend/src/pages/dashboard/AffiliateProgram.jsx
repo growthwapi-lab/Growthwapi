@@ -209,6 +209,26 @@ export default function AffiliateProgram() {
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12">
+      {/* Launch Phase Notice */}
+      <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border-2 border-amber-400/40 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center font-black text-lg shrink-0 shadow-md">
+            🚀
+          </div>
+          <div>
+            <h2 className="text-sm sm:text-base font-black text-gray-900">
+              Partner Commission Program Grand Opening: 26th December 2026!
+            </h2>
+            <p className="text-xs text-gray-600 mt-0.5">
+              During our 50% Grand Launch sale (1–25 Dec), all businesses receive direct promotional pricing. Commission tracking & payouts officially unlock on 26th December with earnings up to ₹2,325/client!
+            </p>
+          </div>
+        </div>
+        <span className="px-3.5 py-1.5 bg-amber-100 text-amber-900 text-xs font-black rounded-full whitespace-nowrap border border-amber-300">
+          Unlocks Dec 26
+        </span>
+      </div>
+
       {/* Hero Welcome Card */}
       <div className="bg-gradient-to-r from-orange-500 via-brand-orange to-amber-600 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
         <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-white/10 transform skew-x-12 pointer-events-none" />

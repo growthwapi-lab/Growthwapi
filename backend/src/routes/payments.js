@@ -8,9 +8,37 @@ const { processSubscriptionAffiliateCommission } = require('../utils/affiliateEn
 
 const router = express.Router();
 
+// ── LAUNCH50 COUPON CONFIG ──
+const LAUNCH_COUPONS = {
+  'LAUNCH50': {
+    discountPercent: 50,
+    validFrom: new Date('2026-12-01T00:00:00+05:30'),
+    validUntil: new Date('2026-12-25T23:59:59+05:30'),
+    description: 'Grand Launch Special — 50% OFF'
+  }
+};
+
+// Validate coupon and return discount info
+function validateCoupon(code) {
+  if (!code) return { valid: false };
+  const coupon = LAUNCH_COUPONS[code.toUpperCase().trim()];
+  if (!coupon) return { valid: false, message: 'Invalid coupon code.' };
+  const now = new Date();
+  if (now < coupon.validFrom) return { valid: false, message: 'This offer is not active yet. It goes live on 1st December!' };
+  if (now > coupon.validUntil) return { valid: false, message: 'This offer has expired.' };
+  return { valid: true, ...coupon };
+}
+
+// GET: Validate coupon code
+router.get('/validate-coupon', auth, async (req, res) => {
+  const { code } = req.query;
+  const result = validateCoupon(code);
+  res.json(result);
+});
+
 // 1. Create Subscription or Upgrade Order
 router.post('/create-subscription-order', auth, async (req, res) => {
-  const { planType } = req.body;
+  const { planType, couponCode } = req.body;
   if (!PLAN_QUOTAS[planType] || planType === 'trial') {
     return res.status(400).json({ error: 'Invalid plan type' });
   }
@@ -27,6 +55,19 @@ router.post('/create-subscription-order', auth, async (req, res) => {
       }
     }
 
+    // Apply coupon discount
+    let couponApplied = null;
+    if (couponCode) {
+      const coupon = validateCoupon(couponCode);
+      if (coupon.valid) {
+        const discountAmount = Math.round(amountToPay * coupon.discountPercent / 100);
+        amountToPay = amountToPay - discountAmount;
+        couponApplied = { code: couponCode.toUpperCase(), discountPercent: coupon.discountPercent, discountAmount, description: coupon.description };
+      } else {
+        return res.status(400).json({ error: coupon.message || 'Invalid coupon code.' });
+      }
+    }
+
     const options = {
       amount: Math.round(amountToPay * 100), // in paise
       currency: 'INR',
@@ -37,6 +78,7 @@ router.post('/create-subscription-order', auth, async (req, res) => {
     res.json({
       ...order,
       amountToPay,
+      couponApplied,
       isUpgrade: Boolean(activeSub && activeSub.plan_type !== planType)
     });
   } catch (error) {

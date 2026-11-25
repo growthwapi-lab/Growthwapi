@@ -11,7 +11,7 @@ const QUOTAS = {
   trial: { utility: 20000, marketing: 10000 },
 };
 
-const RATES = { utility: 0.25, marketing: 1.75 };
+const RATES = { utility: 0.25, marketing: 0.95 };
 
 router.get('/balance', auth, async (req, res) => {
   try {

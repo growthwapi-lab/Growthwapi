@@ -8,20 +8,20 @@ const PLANS = [
     id: 'starter',
     name: 'Starter',
     price: 999,
-    features: ['1,000 utility msgs/mo', '500 marketing msgs/mo', 'Basic Inbox', '1 Team Member'],
+    features: ['Official Meta WhatsApp API', 'Basic Shared Inbox', '1 Team Member Seat', 'Template Approval Manager', 'Unlimited Contacts CRM'],
   },
   {
     id: 'growth',
     name: 'Growth',
     price: 2999,
     popular: true,
-    features: ['5,000 utility msgs/mo', '2,000 marketing msgs/mo', 'Smart Inbox', '5 Team Members', 'Analytics'],
+    features: ['Official Meta WhatsApp API', 'Shared Multi-Agent Team Inbox', '5 Team Members', '24/7 AI Smart Bot (500 replies/mo)', 'Bulk Broadcasts Engine', 'Advanced Analytics'],
   },
   {
     id: 'pro',
     name: 'Pro',
     price: 7999,
-    features: ['20,000 utility msgs/mo', '10,000 marketing msgs/mo', 'Everything in Growth', 'Priority Support', 'Unlimited Members'],
+    features: ['Official Meta WhatsApp API', 'Everything in Growth Plan', 'Unlimited Team Members', '24/7 AI Smart Bot (2,000 replies/mo)', 'Developer REST API & Webhooks', 'Priority 1-on-1 Support'],
   },
 ]
 
@@ -47,6 +47,37 @@ export default function Wallet() {
   const [rechargeAmount, setRechargeAmount] = useState(500)
   const [loading, setLoading] = useState(false)
   const [pageLoading, setPageLoading] = useState(true)
+  const [couponInput, setCouponInput] = useState('')
+  const [appliedCoupon, setAppliedCoupon] = useState(null)
+  const [validatingCoupon, setValidatingCoupon] = useState(false)
+
+  const handleApplyCoupon = async (codeToApply) => {
+    const code = (codeToApply || couponInput).trim().toUpperCase()
+    if (!code) {
+      toast.error('Please enter a coupon code')
+      return
+    }
+    setValidatingCoupon(true)
+    try {
+      const { data } = await api.get(`/api/payments/validate-coupon?code=${code}`)
+      if (data.valid) {
+        setAppliedCoupon({ code, ...data })
+        toast.success(`🎉 ${code} applied! 50% Grand Launch discount active.`)
+      } else {
+        toast.error(data.message || 'Invalid or expired coupon code.')
+      }
+    } catch {
+      toast.error('Could not validate coupon.')
+    } finally {
+      setValidatingCoupon(false)
+    }
+  }
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null)
+    setCouponInput('')
+    toast.success('Coupon removed')
+  }
 
   useEffect(() => {
     fetchWalletData()
@@ -145,7 +176,10 @@ export default function Wallet() {
     }
 
     try {
-      const { data: order } = await api.post('/api/payments/create-subscription-order', { planType: planId })
+      const { data: order } = await api.post('/api/payments/create-subscription-order', {
+        planType: planId,
+        couponCode: appliedCoupon ? appliedCoupon.code : undefined
+      })
       const plan = PLANS.find(p => p.id === planId)
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
@@ -286,8 +320,8 @@ export default function Wallet() {
           <p className="text-4xl font-bold mt-2">₹{balance.toFixed(2)}</p>
           <p className="text-blue-200 text-sm mt-1">Available for message overage charges</p>
           <div className="mt-4 p-3 bg-white/10 rounded-lg text-sm space-y-1">
-            <p>Utility overage rate: <span className="font-bold">₹0.25/msg</span></p>
-            <p>Marketing overage rate: <span className="font-bold">₹1.75/msg</span></p>
+            <p>Utility message rate: <span className="font-bold">₹0.25/msg</span></p>
+            <p>Marketing message rate: <span className="font-bold">₹0.95/msg</span></p>
           </div>
         </div>
 
@@ -368,12 +402,61 @@ export default function Wallet() {
           )}
         </div>
 
+        {/* Launch Coupon Box */}
+        <div className="bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 border border-orange-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🏷️</span>
+            <div>
+              <div className="text-sm font-black text-gray-900 flex items-center gap-2">
+                Have a Grand Launch Coupon?
+                <button
+                  type="button"
+                  onClick={() => handleApplyCoupon('LAUNCH50')}
+                  className="text-xs font-bold text-brand-orange underline hover:text-orange-700 cursor-pointer"
+                >
+                  Apply LAUNCH50 (50% OFF)
+                </button>
+              </div>
+              <p className="text-xs text-gray-600">
+                Unlock Flat 50% OFF on all plans during our Grand Launch special window!
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            {appliedCoupon ? (
+              <div className="flex items-center gap-2 bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-xl border border-emerald-300 text-xs font-black">
+                <span>✓ {appliedCoupon.code} Applied (50% OFF)</span>
+                <button type="button" onClick={handleRemoveCoupon} className="text-emerald-700 hover:text-red-600 font-bold ml-1 cursor-pointer">✕</button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <input
+                  type="text"
+                  placeholder="e.g. LAUNCH50"
+                  value={couponInput}
+                  onChange={e => setCouponInput(e.target.value)}
+                  className="px-3 py-1.5 rounded-xl border border-gray-300 text-xs uppercase font-bold tracking-wider w-full sm:w-36 focus:outline-brand-orange"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleApplyCoupon()}
+                  disabled={validatingCoupon}
+                  className="bg-brand-orange hover:bg-orange-600 text-white px-4 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer"
+                >
+                  {validatingCoupon ? 'Checking...' : 'Apply'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="grid md:grid-cols-3 gap-6">
           {PLANS.map(plan => {
             const planIdx = PLAN_ORDER.indexOf(plan.id)
             const currentIdx = PLAN_ORDER.indexOf(currentPkg)
+            const finalPrice = appliedCoupon ? Math.round(plan.price * (1 - appliedCoupon.discountPercent / 100)) : plan.price
             
-            let btnText = `Subscribe — ₹${plan.price.toLocaleString()}/mo`
+            let btnText = `Subscribe — ₹${finalPrice.toLocaleString()}/mo`
             let btnDisabled = false
             let isCurrent = false
 
@@ -386,12 +469,12 @@ export default function Wallet() {
                 btnText = 'Available at next renewal'
                 btnDisabled = true
               } else if (planIdx > currentIdx) {
-                const diff = plan.price - currentPrice
-                btnText = `Upgrade for ₹${diff.toLocaleString()}`
+                const diff = finalPrice - (appliedCoupon ? Math.round(currentPrice * 0.5) : currentPrice)
+                btnText = `Upgrade for ₹${Math.max(0, diff).toLocaleString()}`
                 btnDisabled = false
               }
             } else if (isExpired && plan.id === currentPkg) {
-              btnText = `Renew Plan — ₹${plan.price.toLocaleString()}/mo`
+              btnText = `Renew Plan — ₹${finalPrice.toLocaleString()}/mo`
               btnDisabled = false
             }
 
@@ -416,8 +499,16 @@ export default function Wallet() {
                       <span className="bg-brand-orange text-white text-xs font-bold px-2.5 py-0.5 rounded-full">Most Popular</span>
                     )}
                   </div>
-                  <div className="text-3xl font-extrabold my-3 text-brand-dark">
-                    ₹{plan.price.toLocaleString()}<span className="text-sm font-normal text-gray-500">/mo</span>
+                  <div className="text-3xl font-extrabold my-3 text-brand-dark flex items-baseline gap-2">
+                    {appliedCoupon ? (
+                      <>
+                        <span className="text-emerald-600 font-black">₹{finalPrice.toLocaleString()}</span>
+                        <span className="text-base line-through text-gray-400 font-normal">₹{plan.price.toLocaleString()}</span>
+                      </>
+                    ) : (
+                      <span>₹{plan.price.toLocaleString()}</span>
+                    )}
+                    <span className="text-sm font-normal text-gray-500">/mo</span>
                   </div>
                   <ul className="space-y-2.5 mb-6">
                     {plan.features.map((f, i) => (
@@ -447,7 +538,11 @@ export default function Wallet() {
           })}
         </div>
 
-        <p className="text-xs text-gray-500 mt-6 text-center flex items-center justify-center gap-1.5">
+        <p className="text-xs text-gray-500 mt-4 text-center">
+          💬 Official Meta conversation charges apply separately via transparent prepaid wallet recharge (at Meta actual rates).
+        </p>
+
+        <p className="text-xs text-gray-500 mt-2 text-center flex items-center justify-center gap-1.5">
           <ShieldCheck size={14} className="text-emerald-600 inline" />
           Secured by Razorpay. All major UPI, Credit/Debit cards & Net Banking supported.
         </p>

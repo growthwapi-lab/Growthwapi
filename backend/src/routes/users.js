@@ -12,6 +12,7 @@ const {
   checkTrialEligibility
 } = require('../utils/trialLimits');
 const { registerClientReferral } = require('../utils/affiliateEngine');
+const { sendWelcomeWhatsAppMessage } = require('../utils/welcomeMessenger');
 
 const router = express.Router();
 
@@ -25,7 +26,7 @@ async function getOrCreateUser(reqUser) {
 
   if (!user) {
     const trialStart = new Date();
-    const trialEnd = new Date(trialStart.getTime() + 4 * 24 * 60 * 60 * 1000);
+    const trialEnd = new Date(trialStart.getTime() + 7 * 24 * 60 * 60 * 1000);
 
     const newProfile = {
       id: reqUser.id,
@@ -51,6 +52,14 @@ async function getOrCreateUser(reqUser) {
       return newProfile;
     }
     user = upsertedUser;
+
+    // Send automated WhatsApp welcome message
+    const targetPhone = user.phone || reqUser.user_metadata?.phone;
+    if (targetPhone) {
+      sendWelcomeWhatsAppMessage(targetPhone, user.name).catch(e => {
+        console.error('Failed to trigger WhatsApp welcome:', e.message);
+      });
+    }
 
     // Check if referral code was provided in user metadata during signup
     const refCode = reqUser.user_metadata?.referral_code;
@@ -205,6 +214,20 @@ router.get('/active-plan', auth, async (req, res) => {
       const quota = PLAN_QUOTAS[pkg] || PLAN_QUOTAS.starter;
       const bonusMessages = Number(activeSub.bonus_messages || user.referral_bonus_messages || 0);
 
+      // Check Founder Member rank (among first 10 paid subscriptions)
+      let isFounderMember = false;
+      let founderRank = null;
+      try {
+        const { count: priorPaidCount } = await supabaseAdmin
+          .from('subscriptions')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'active')
+          .lte('created_at', activeSub.created_at || activeSub.start_date);
+        
+        founderRank = priorPaidCount || 1;
+        isFounderMember = founderRank <= 10;
+      } catch {}
+
       return res.json({
         plan: pkg.toUpperCase(),
         planName: pkg.toUpperCase(),
@@ -226,7 +249,9 @@ router.get('/active-plan', auth, async (req, res) => {
         isTrial: false,
         isExpired: activeSub.status === 'expired' || now > endDate,
         isHighestPlan: pkg === 'pro',
-        badgeText: `${pkg.toUpperCase()} Plan`
+        badgeText: `${pkg.toUpperCase()} Plan`,
+        isFounderMember,
+        founderRank
       });
     }
 
@@ -234,6 +259,39 @@ router.get('/active-plan', auth, async (req, res) => {
     const trialEnd = user.trial_end_date ? new Date(user.trial_end_date) : new Date();
     const daysRemaining = Math.max(0, Math.ceil((trialEnd - now) / (1000 * 60 * 60 * 24)));
     const isExpired = user.account_status === 'paused' || (user.account_status === 'trial' && now > trialEnd);
+
+    // Smart Urgency Launch Offer Logic
+    const signupDate = user.created_at ? new Date(user.created_at) : new Date(user.trial_start_date || now);
+    const dec15Cutoff = new Date('2026-12-15T23:59:59+05:30');
+    const dec25End = new Date('2026-12-25T23:59:59+05:30');
+
+    let launchOffer = null;
+    if (now <= dec25End) {
+      if (signupDate <= dec15Cutoff) {
+        // 3-day personal urgency timer after trial ends
+        const timerDeadline = new Date(trialEnd.getTime() + 3 * 24 * 60 * 60 * 1000);
+        launchOffer = {
+          active: now <= timerDeadline,
+          code: 'LAUNCH50',
+          discountPercent: 50,
+          type: '3_day_urgency',
+          deadline: timerDeadline.toISOString(),
+          isExpiredTrial: isExpired,
+          isUrgent: Math.max(0, timerDeadline - now) <= 24 * 60 * 60 * 1000
+        };
+      } else {
+        // Signup Dec 16 - Dec 25: Fixed deadline Dec 25
+        launchOffer = {
+          active: now <= dec25End,
+          code: 'LAUNCH50',
+          discountPercent: 50,
+          type: 'fixed_dec25',
+          deadline: dec25End.toISOString(),
+          isExpiredTrial: isExpired,
+          isUrgent: Math.max(0, dec25End - now) <= 24 * 60 * 60 * 1000
+        };
+      }
+    }
 
     return res.json({
       plan: 'Free Trial',
@@ -254,7 +312,8 @@ router.get('/active-plan', auth, async (req, res) => {
       isTrial: !isExpired && user.account_status === 'trial',
       isExpired,
       isHighestPlan: false,
-      badgeText: isExpired ? 'Expired' : `Trial (${daysRemaining}d left)`
+      badgeText: isExpired ? 'Expired' : `Trial (${daysRemaining}d left)`,
+      launchOffer
     });
   } catch (error) {
     console.error('Active plan error:', error);

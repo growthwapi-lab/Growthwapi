@@ -4,7 +4,7 @@ const PLAN_QUOTAS = {
   starter: { utility: 1000, marketing: 500, price: 999 },
   growth: { utility: 5000, marketing: 2000, price: 2999 },
   pro: { utility: 20000, marketing: 10000, price: 7999 },
-  trial: { utility: 50, marketing: 20, price: 0 }
+  trial: { utility: 50, marketing: 30, price: 0 }
 };
 
 const TRIAL_CAPS = PLAN_QUOTAS.trial;

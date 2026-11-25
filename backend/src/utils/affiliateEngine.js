@@ -69,6 +69,13 @@ const REFERRAL_BONUS_MESSAGES = {
  */
 async function processSubscriptionAffiliateCommission(clientId, planType, subscriptionId) {
   try {
+    // Affiliate commissions open on 26th December 2026 after the 50% Grand Launch concludes
+    const AFFILIATE_START_DATE = new Date('2026-12-26T00:00:00+05:30');
+    if (new Date() < AFFILIATE_START_DATE) {
+      console.log(`[Affiliate] Program officially begins on 26 Dec 2026. Commission paused during 50% Grand Launch sale.`);
+      return null;
+    }
+
     const normalizedPlan = (planType || '').toLowerCase();
     const planSchedule = COMMISSION_SCHEDULE[normalizedPlan];
     if (!planSchedule) return null;

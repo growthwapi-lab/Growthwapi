@@ -289,7 +289,7 @@ export default function DashboardHome() {
                 {activePlan.isPaid ? (
                   <><strong>₹{activePlan.price.toLocaleString()}/mo</strong> — Renews {new Date(activePlan.endDate).toLocaleDateString()}</>
                 ) : (
-                  <>Trial Cap: 50 utility, 20 marketing messages | {activePlan.daysRemaining} days left</>
+                  <>Trial Cap: 50 utility, 30 marketing messages | {activePlan.daysRemaining} days left</>
                 )}
               </p>
             </div>

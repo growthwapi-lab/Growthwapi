@@ -63,9 +63,9 @@ export default function TermsOfService() {
         <section className="bg-white p-6 md:p-8 rounded-2xl border border-gray-200 shadow-xs space-y-3">
           <h2 className="text-lg font-black text-[#1E3A5F]">4. Free Trial, Subscriptions & Wallet Billing</h2>
           <ul className="space-y-1.5 list-disc list-inside text-gray-600">
-            <li><strong>Free Trial:</strong> New registrations receive a 4-day free trial with capped trial messages. No credit card is required to start.</li>
-            <li><strong>Monthly Plans:</strong> Paid plans (Starter ₹999/mo, Growth ₹2,999/mo, Pro ₹7,999/mo) provide defined monthly message quotas.</li>
-            <li><strong>Overage & Meta Conversation Fees:</strong> Extra messages beyond monthly quotas require a funded wallet balance (billed at ₹0.25/utility message and ₹1.75/marketing message). Direct Meta conversation fees (if applicable) are paid via your linked Meta Business payment card.</li>
+            <li><strong>Free Trial:</strong> New registrations receive a 7-day free trial with 50 utility and 30 marketing messages. No credit card is required to start.</li>
+            <li><strong>Monthly Plans:</strong> Paid plans (Starter ₹999/mo, Growth ₹2,999/mo, Pro ₹7,999/mo) provide official WhatsApp API software access, multi-agent inboxes, and AI bot automation.</li>
+            <li><strong>Messaging & Wallet Fees:</strong> WhatsApp messages are billed from a prepaid wallet balance (transparently priced at ₹0.25 per utility message and ₹0.95 per marketing message).</li>
             <li><strong>Refunds:</strong> Subscription fees are billed in advance on a monthly basis and are non-refundable once activated. Unused wallet top-ups can be refunded upon account cancellation request.</li>
           </ul>
         </section>

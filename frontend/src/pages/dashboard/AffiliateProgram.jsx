@@ -207,6 +207,61 @@ export default function AffiliateProgram() {
     )
   }
 
+  const isAffiliateLive = new Date() >= new Date('2026-12-26T00:00:00+05:30')
+
+  if (!isAffiliateLive) {
+    return (
+      <div className="max-w-4xl mx-auto py-12 px-4 text-center">
+        <div className="bg-gradient-to-br from-[#1E3A5F] via-[#152a45] to-[#0d1b2a] rounded-3xl p-8 sm:p-14 text-white shadow-2xl border border-white/10 relative overflow-hidden">
+          {/* Ambient Glow */}
+          <div className="absolute -top-24 -right-24 w-80 h-80 bg-orange-500/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative z-10 max-w-2xl mx-auto space-y-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-yellow-300 font-extrabold text-xs uppercase tracking-widest shadow-inner">
+              <Award className="w-4 h-4 text-yellow-400" />
+              <span>Official Partner Initiative</span>
+            </div>
+
+            <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
+              Growthwapi Partner Program
+            </h1>
+
+            <div className="inline-block bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black text-sm sm:text-base px-6 py-2.5 rounded-full shadow-lg shadow-orange-500/30 tracking-wide uppercase">
+              🚀 Starting from 26th December 2026
+            </div>
+
+            <p className="text-sm sm:text-base text-gray-300 leading-relaxed font-medium">
+              Our partner and referral program will officially unlock on <b>26th December</b> right after our Grand Launch promotional pricing concludes.
+            </p>
+
+            <div className="grid sm:grid-cols-3 gap-4 pt-4 text-left">
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-xs">
+                <div className="text-2xl mb-1">💰</div>
+                <div className="font-extrabold text-white text-sm">Up to ₹2,325</div>
+                <div className="text-xs text-gray-400 mt-0.5">Per referral commission</div>
+              </div>
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-xs">
+                <div className="text-2xl mb-1">📈</div>
+                <div className="font-extrabold text-white text-sm">Monthly Recurring</div>
+                <div className="text-xs text-gray-400 mt-0.5">Earn every month client renews</div>
+              </div>
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-xs">
+                <div className="text-2xl mb-1">⚡</div>
+                <div className="font-extrabold text-white text-sm">Direct Bank / UPI</div>
+                <div className="text-xs text-gray-400 mt-0.5">Zero fees, instant payouts</div>
+              </div>
+            </div>
+
+            <div className="pt-6 border-t border-white/10 text-xs text-gray-400">
+              All registered users will receive unique tracking links & promotional materials on 26th December!
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12">
       {/* Launch Phase Notice */}

@@ -214,19 +214,29 @@ router.get('/active-plan', auth, async (req, res) => {
       const quota = PLAN_QUOTAS[pkg] || PLAN_QUOTAS.starter;
       const bonusMessages = Number(activeSub.bonus_messages || user.referral_bonus_messages || 0);
 
-      // Check Founder Member rank (among first 10 paid subscriptions)
+      // Check Founder Member rank (among first 10 paid subscriptions, excluding admin accounts)
       let isFounderMember = false;
       let founderRank = null;
-      try {
-        const { count: priorPaidCount } = await supabaseAdmin
-          .from('subscriptions')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'active')
-          .lte('created_at', activeSub.created_at || activeSub.start_date);
-        
-        founderRank = priorPaidCount || 1;
-        isFounderMember = founderRank <= 10;
-      } catch {}
+      const userEmail = (user.email || req.user.email || '').toLowerCase();
+      const userPhone = (user.phone || '').replace(/\D/g, '');
+      const isAdminAccount = 
+        userEmail === 'growthwapi@gmail.com' ||
+        userEmail === 'sauravrai8757@gmail.com' ||
+        userEmail.includes('growthwapi') ||
+        userPhone.endsWith('9122257780');
+
+      if (!isAdminAccount) {
+        try {
+          const { count: priorPaidCount } = await supabaseAdmin
+            .from('subscriptions')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'active')
+            .lte('created_at', activeSub.created_at || activeSub.start_date);
+          
+          founderRank = priorPaidCount || 1;
+          isFounderMember = founderRank <= 10;
+        } catch {}
+      }
 
       return res.json({
         plan: pkg.toUpperCase(),

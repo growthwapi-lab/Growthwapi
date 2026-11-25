@@ -150,7 +150,7 @@ export default function DashboardLayout() {
               <img src="/logo.png.png" alt="Growthwapi" className="h-7 object-contain" />
             </Link>
             <div className="flex items-center gap-1.5">
-              {activePlan?.isFounderMember && (
+              {!isAdmin && activePlan?.isFounderMember && (
                 <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 text-gray-900 border border-yellow-300 shadow-2xs" title="Growthwapi Original Founder Member">
                   🏆 Founder #{activePlan.founderRank}
                 </span>

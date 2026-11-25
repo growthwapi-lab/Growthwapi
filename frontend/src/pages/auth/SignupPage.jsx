@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import api from '../../lib/api'
 
 export default function SignupPage() {
+  const isAffiliateLive = new Date() >= new Date('2026-12-26T00:00:00+05:30')
   const [searchParams] = useSearchParams()
   const referralParam = searchParams.get('ref') || ''
 
@@ -237,94 +238,98 @@ export default function SignupPage() {
             />
           </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-semibold text-gray-600">Referral / Partner Code (Optional)</label>
-              {refStatus.checking && (
-                <span className="text-[10px] font-medium text-blue-600 animate-pulse">
-                  Verifying code...
-                </span>
-              )}
-              {!refStatus.checking && refStatus.valid && (
-                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                  ✓ {refStatus.partnerName || 'Verified Partner'}
-                </span>
-              )}
-              {!refStatus.checking && refStatus.error && (
-                <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
-                  ✗ Invalid Code
-                </span>
-              )}
-            </div>
-            <div className="relative">
-              <input
-                type="text" name="referralCode"
-                placeholder="e.g. GW-ADMIN-101"
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none uppercase font-mono text-xs transition-colors ${
-                  refStatus.valid
-                    ? 'border-emerald-500 bg-emerald-50/20 focus:ring-emerald-400'
-                    : refStatus.error
-                    ? 'border-rose-400 bg-rose-50/30 focus:ring-rose-400'
-                    : 'border-gray-200 focus:ring-brand-purple'
-                }`}
-                value={formData.referralCode} onChange={handleChange}
-              />
-              {formData.referralCode && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFormData(prev => ({ ...prev, referralCode: '' }))
-                    setRefStatus({ checking: false, valid: false, partnerName: '', error: '' })
-                    localStorage.removeItem('gw_referral_code')
-                  }}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs px-1"
-                  title="Clear referral code"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Invalid Referral Code Error Box */}
-          {!refStatus.checking && refStatus.error && formData.referralCode && (
-            <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 text-xs text-rose-700 space-y-1 animate-fadeIn">
-              <p className="font-bold flex items-center gap-1.5 text-rose-800">
-                <span>⚠️</span> Invalid Referral Code
-              </p>
-              <p className="text-[11px] leading-relaxed">
-                Referral code <strong>"{formData.referralCode}"</strong> was not found in our partner database.
-              </p>
-              <p className="text-[11px] font-medium text-rose-600">
-                Please enter a valid partner code, or click <strong>✕</strong> above to sign up normally without one.
-              </p>
-            </div>
-          )}
-
-          {/* Valid Referral Offer Unlock Banner */}
-          {!refStatus.checking && refStatus.valid && (
-            <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-3.5 space-y-2.5 animate-fadeIn">
-              <p className="text-xs font-black text-emerald-700 flex items-center gap-1.5">
-                🎁 Partner Referral Unlocks:
-              </p>
-              <div className="space-y-1.5">
-                <div className="flex items-start gap-2">
-                  <span className="text-emerald-500 text-sm mt-0.5">✓</span>
-                  <p className="text-xs text-emerald-800 font-semibold leading-snug">
-                    <span className="text-emerald-700 font-black">Bonus Free Messages</span> on your 1st plan purchase —
-                    Starter <span className="font-black">+200</span> · Growth <span className="font-black">+300</span> · Pro <span className="font-black">+500</span>
-                  </p>
+          {isAffiliateLive && (
+            <>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-gray-600">Referral / Partner Code (Optional)</label>
+                  {refStatus.checking && (
+                    <span className="text-[10px] font-medium text-blue-600 animate-pulse">
+                      Verifying code...
+                    </span>
+                  )}
+                  {!refStatus.checking && refStatus.valid && (
+                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                      ✓ {refStatus.partnerName || 'Verified Partner'}
+                    </span>
+                  )}
+                  {!refStatus.checking && refStatus.error && (
+                    <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                      ✗ Invalid Code
+                    </span>
+                  )}
                 </div>
-                <div className="flex items-start gap-2">
-                  <span className="text-emerald-500 text-sm mt-0.5">✓</span>
-                  <p className="text-xs text-emerald-800 font-semibold leading-snug">
-                    <span className="text-emerald-700 font-black">1-on-1 Setup Support</span> — {refStatus.partnerName} will personally onboard you
-                    and set up your WhatsApp Business API & Meta account.
-                  </p>
+                <div className="relative">
+                  <input
+                    type="text" name="referralCode"
+                    placeholder="e.g. GW-ADMIN-101"
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none uppercase font-mono text-xs transition-colors ${
+                      refStatus.valid
+                        ? 'border-emerald-500 bg-emerald-50/20 focus:ring-emerald-400'
+                        : refStatus.error
+                        ? 'border-rose-400 bg-rose-50/30 focus:ring-rose-400'
+                        : 'border-gray-200 focus:ring-brand-purple'
+                    }`}
+                    value={formData.referralCode} onChange={handleChange}
+                  />
+                  {formData.referralCode && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData(prev => ({ ...prev, referralCode: '' }))
+                        setRefStatus({ checking: false, valid: false, partnerName: '', error: '' })
+                        localStorage.removeItem('gw_referral_code')
+                      }}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs px-1"
+                      title="Clear referral code"
+                    >
+                      ✕
+                    </button>
+                  )}
                 </div>
               </div>
-              <p className="text-[10px] text-emerald-600 opacity-80">*Bonus messages on first plan purchase only. Setup support provided by your partner.</p>
-            </div>
+
+              {/* Invalid Referral Code Error Box */}
+              {!refStatus.checking && refStatus.error && formData.referralCode && (
+                <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 text-xs text-rose-700 space-y-1 animate-fadeIn">
+                  <p className="font-bold flex items-center gap-1.5 text-rose-800">
+                    <span>⚠️</span> Invalid Referral Code
+                  </p>
+                  <p className="text-[11px] leading-relaxed">
+                    Referral code <strong>"{formData.referralCode}"</strong> was not found in our partner database.
+                  </p>
+                  <p className="text-[11px] font-medium text-rose-600">
+                    Please enter a valid partner code, or click <strong>✕</strong> above to sign up normally without one.
+                  </p>
+                </div>
+              )}
+
+              {/* Valid Referral Offer Unlock Banner */}
+              {!refStatus.checking && refStatus.valid && (
+                <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-3.5 space-y-2.5 animate-fadeIn">
+                  <p className="text-xs font-black text-emerald-700 flex items-center gap-1.5">
+                    🎁 Partner Referral Unlocks:
+                  </p>
+                  <div className="space-y-1.5">
+                    <div className="flex items-start gap-2">
+                      <span className="text-emerald-500 text-sm mt-0.5">✓</span>
+                      <p className="text-xs text-emerald-800 font-semibold leading-snug">
+                        <span className="text-emerald-700 font-black">Bonus Free Messages</span> on your 1st plan purchase —
+                        Starter <span className="font-black">+200</span> · Growth <span className="font-black">+300</span> · Pro <span className="font-black">+500</span>
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-emerald-500 text-sm mt-0.5">✓</span>
+                      <p className="text-xs text-emerald-800 font-semibold leading-snug">
+                        <span className="text-emerald-700 font-black">1-on-1 Setup Support</span> — {refStatus.partnerName} will personally onboard you
+                        and set up your WhatsApp Business API & Meta account.
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-emerald-600 opacity-80">*Bonus messages on first plan purchase only. Setup support provided by your partner.</p>
+                </div>
+              )}
+            </>
           )}
 
           <button

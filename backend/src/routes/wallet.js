@@ -1,6 +1,7 @@
 const express = require('express');
 const auth = require('../middleware/auth');
 const { supabaseAdmin } = require('../config/supabase');
+const { isUserAdmin, getActiveSubscription } = require('../utils/trialLimits');
 
 const router = express.Router();
 
@@ -26,6 +27,18 @@ router.get('/balance', auth, async (req, res) => {
     if (error && error.code !== 'PGRST116') throw error;
     if (!usage) {
       usage = { utility_msgs_sent: 0, marketing_msgs_sent: 0, wallet_balance: 0 };
+    }
+
+    if (await isUserAdmin(req.user.id, req.user)) {
+      const adminSub = await getActiveSubscription(req.user.id);
+      return res.json({
+        ...usage,
+        utility_quota: 999999,
+        marketing_quota: 999999,
+        package_type: 'pro',
+        isAdmin: true,
+        subscription: adminSub,
+      });
     }
 
     // Get user's package type for quota
@@ -58,6 +71,11 @@ router.get('/balance', auth, async (req, res) => {
 router.post('/deduct', auth, async (req, res) => {
   const { type, count } = req.body;
   try {
+    // Admin account never gets charged or blocked for wallet balance
+    if (await isUserAdmin(req.user.id, req.user)) {
+      return res.json({ success: true, deducted: 0, isAdmin: true });
+    }
+
     const { data: user } = await supabaseAdmin.from('users').select('package_type').eq('id', req.user.id).single();
     if (!user) return res.status(404).json({ error: 'User not found' });
 

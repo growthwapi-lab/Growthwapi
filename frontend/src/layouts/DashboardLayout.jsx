@@ -102,7 +102,7 @@ export default function DashboardLayout() {
         { name: 'Contacts', path: '/dashboard/contacts', icon: Users },
         { name: 'Templates', path: '/dashboard/templates', icon: FileText },
         { name: 'Broadcast', path: '/dashboard/broadcast', icon: Send },
-        { name: 'Team Members', path: '/dashboard/team', icon: UserPlus, badge: activePlan?.plan_type === 'growth' ? '5 SLOTS' : activePlan?.plan_type === 'pro' ? 'UNLIMITED' : '' },
+        { name: 'Team Members', path: '/dashboard/team', icon: UserPlus, badge: (isAdmin || activePlan?.isAdmin || activePlan?.packageType === 'pro' || activePlan?.plan_type === 'pro') ? 'UNLIMITED' : (activePlan?.packageType === 'growth' || activePlan?.plan_type === 'growth') ? '5 SLOTS' : '' },
         { name: 'Analytics', path: '/dashboard/analytics', icon: BarChart2 },
         { name: 'Wallet', path: '/dashboard/wallet', icon: Wallet },
         { name: 'Developer Hub', path: '/dashboard/developer', icon: Code },
@@ -191,11 +191,16 @@ export default function DashboardLayout() {
 
           <div className="p-4 border-t border-gray-200">
             <div className="mb-4 px-3 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-brand-blue text-white flex items-center justify-center font-bold">
+              <div className={`w-10 h-10 rounded-full text-white flex items-center justify-center font-bold shrink-0 ${(isAdmin || activePlan?.isAdmin) ? 'bg-gradient-to-br from-amber-500 to-orange-600' : 'bg-brand-blue'}`}>
                 {user?.email?.charAt(0).toUpperCase()}
               </div>
               <div className="overflow-hidden">
                 <p className="text-sm font-bold text-brand-dark truncate">{user?.email}</p>
+                {(isAdmin || activePlan?.isAdmin) && (
+                  <span className="inline-block mt-0.5 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                    👑 Super Admin
+                  </span>
+                )}
               </div>
             </div>
             <button
@@ -220,7 +225,7 @@ export default function DashboardLayout() {
         </header>
 
         {/* Launch Urgency Countdown Banner */}
-        {activePlan?.launchOffer?.active && (
+        {!isAdmin && !activePlan?.isAdmin && activePlan?.launchOffer?.active && (
           <LaunchOfferCountdown 
             deadline={activePlan.launchOffer.deadline}
             isUrgent={activePlan.launchOffer.isUrgent}

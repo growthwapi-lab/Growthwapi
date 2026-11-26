@@ -1,13 +1,21 @@
 const express = require('express');
 const auth = require('../middleware/auth');
 const { supabaseAdmin } = require('../config/supabase');
-const { getActiveSubscription } = require('../utils/trialLimits');
+const { getActiveSubscription, isUserAdmin } = require('../utils/trialLimits');
 
 const router = express.Router();
 
 // Helper to determine team member limit based on plan
 async function getTeamLimitsForUser(userId) {
   const activeSub = await getActiveSubscription(userId);
+  if (await isUserAdmin(userId)) {
+    return {
+      planType: 'pro',
+      maxMembers: 9999,
+      isPaid: true,
+      sub: activeSub
+    };
+  }
   const planType = activeSub?.plan_type || 'trial';
 
   let maxMembers = 1; // Default for trial & starter

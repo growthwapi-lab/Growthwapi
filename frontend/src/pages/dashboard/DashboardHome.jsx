@@ -300,17 +300,34 @@ export default function DashboardHome() {
               </p>
             </div>
           </div>
-          <Link
-            to="/dashboard/wallet"
-            className="bg-brand-blue/10 hover:bg-brand-blue/20 text-brand-blue px-4 py-2.5 rounded-xl font-bold text-sm transition-colors flex items-center gap-2 whitespace-nowrap"
-          >
-            Manage Billing & Wallet <ArrowRight size={16} />
-          </Link>
+          {activePlan.isAdmin ? (
+            <div className="flex flex-wrap items-center gap-2.5">
+              <Link
+                to="/dashboard/team"
+                className="bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 px-4 py-2.5 rounded-xl font-bold text-sm transition-colors flex items-center gap-2 whitespace-nowrap"
+              >
+                <Users size={16} /> Unlimited Team
+              </Link>
+              <Link
+                to="/dashboard/admin"
+                className="bg-gradient-to-r from-brand-blue to-indigo-700 hover:from-blue-800 hover:to-indigo-800 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm flex items-center gap-2 whitespace-nowrap"
+              >
+                Open Super Admin Panel <ArrowRight size={16} />
+              </Link>
+            </div>
+          ) : (
+            <Link
+              to="/dashboard/wallet"
+              className="bg-brand-blue/10 hover:bg-brand-blue/20 text-brand-blue px-4 py-2.5 rounded-xl font-bold text-sm transition-colors flex items-center gap-2 whitespace-nowrap"
+            >
+              Manage Billing & Wallet <ArrowRight size={16} />
+            </Link>
+          )}
         </div>
       )}
 
-      {/* 3+3 Loyalty Rewards Progress Card */}
-      {activePlan && (
+      {/* 3+3 Loyalty Rewards Progress Card (Hidden for Admin) */}
+      {activePlan && !activePlan.isAdmin && (
         <div className="bg-gradient-to-br from-white via-orange-50/25 to-amber-50/40 rounded-2xl border border-orange-200/80 shadow-xs p-6 relative overflow-hidden">
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
             <div className="flex items-center gap-3">

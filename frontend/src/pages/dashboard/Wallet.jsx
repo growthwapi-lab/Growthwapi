@@ -238,6 +238,26 @@ export default function Wallet() {
         <p className="text-gray-500 mt-1">Manage your balance, monthly quota usage, and subscription plans.</p>
       </div>
 
+      {/* Super Admin Permanent Free Notice */}
+      {activePlan?.isAdmin && (
+        <div className="bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border border-amber-300 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+          <div className="flex items-start gap-3">
+            <div className="w-11 h-11 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl shrink-0">
+              👑
+            </div>
+            <div>
+              <h2 className="font-extrabold text-amber-950 text-base">Growthwapi Super Admin Account — Lifetime PRO Active</h2>
+              <p className="text-xs sm:text-sm text-amber-900/80 mt-0.5">
+                Aapko apne account mein subscription ya wallet recharge pay karne ki koi zaroorat nahi hai. Meta WhatsApp API messages ka bill direct aapke Meta Business Manager card se settle hota hai.
+              </p>
+            </div>
+          </div>
+          <span className="self-start sm:self-center px-3 py-1.5 rounded-xl bg-amber-600 text-white text-xs font-black uppercase tracking-wider shrink-0">
+            PERMANENT PAID
+          </span>
+        </div>
+      )}
+
       {/* Current Subscription Card */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 relative overflow-hidden">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b border-gray-100">
@@ -266,12 +286,18 @@ export default function Wallet() {
               <Calendar size={16} className="text-brand-orange" />
               <div>
                 <span className="text-gray-500 block text-xs">Renewal / Expiry Date</span>
-                <span className="font-bold text-brand-dark">
-                  {new Date(activePlan.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                </span>
-                <span className="text-xs text-brand-purple font-semibold ml-2">
-                  ({activePlan.daysRemaining} day{activePlan.daysRemaining !== 1 ? 's' : ''} left)
-                </span>
+                {activePlan.isAdmin ? (
+                  <span className="font-bold text-amber-700">Lifetime Access (Never Expires)</span>
+                ) : (
+                  <>
+                    <span className="font-bold text-brand-dark">
+                      {new Date(activePlan.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </span>
+                    <span className="text-xs text-brand-purple font-semibold ml-2">
+                      ({activePlan.daysRemaining} day{activePlan.daysRemaining !== 1 ? 's' : ''} left)
+                    </span>
+                  </>
+                )}
               </div>
             </div>
           )}

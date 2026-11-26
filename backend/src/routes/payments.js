@@ -8,13 +8,19 @@ const { processSubscriptionAffiliateCommission } = require('../utils/affiliateEn
 
 const router = express.Router();
 
-// ── LAUNCH50 COUPON CONFIG ──
+// ── LAUNCH50 & LOYALTY COUPON CONFIG ──
 const LAUNCH_COUPONS = {
   'LAUNCH50': {
     discountPercent: 50,
     validFrom: new Date('2026-12-01T00:00:00+05:30'),
     validUntil: new Date('2026-12-25T23:59:59+05:30'),
     description: 'Grand Launch Special — 50% OFF'
+  },
+  'LOYALTY50': {
+    discountPercent: 50,
+    validFrom: new Date('2026-11-01T00:00:00+05:30'),
+    validUntil: new Date('2029-12-31T23:59:59+05:30'),
+    description: '3+3 Loyalty Rewards Club — 50% OFF'
   }
 };
 

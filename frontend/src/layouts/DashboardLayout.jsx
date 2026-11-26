@@ -55,16 +55,17 @@ export default function DashboardLayout() {
 
   const ADMIN_EMAILS = ['sauravrai8757@gmail.com', 'growthwapi@gmail.com']
   const userEmail = (user?.email || '').toLowerCase()
+  const userPhone = (user?.user_metadata?.phone || user?.phone || '').replace(/\D/g, '')
 
   useEffect(() => {
-    if (ADMIN_EMAILS.includes(userEmail)) {
+    if (ADMIN_EMAILS.includes(userEmail) || userEmail.includes('growthwapi') || userPhone.endsWith('9122257780')) {
       setIsAdmin(true)
     } else {
       api.get('/api/admin/verify')
         .then(() => setIsAdmin(true))
         .catch(() => setIsAdmin(false))
     }
-  }, [userEmail])
+  }, [userEmail, userPhone])
 
   useEffect(() => {
     fetchActivePlan()
@@ -129,8 +130,8 @@ export default function DashboardLayout() {
     return location.pathname.startsWith(path) && path !== '/dashboard'
   }
 
-  const showTrialBanner = activePlan?.isTrial && !activePlan?.isPaid
-  const showPausedBanner = activePlan?.isExpired || activePlan?.status === 'Paused' || activePlan?.status === 'Expired'
+  const showTrialBanner = !isAdmin && !activePlan?.isAdmin && activePlan?.isTrial && !activePlan?.isPaid
+  const showPausedBanner = !isAdmin && !activePlan?.isAdmin && (activePlan?.isExpired || activePlan?.status === 'Paused' || activePlan?.status === 'Expired')
 
   return (
     <div className="flex h-screen bg-brand-light overflow-hidden">

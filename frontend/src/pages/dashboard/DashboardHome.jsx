@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
-import { MessageSquare, Users, Send, Wallet, CheckCircle, Smartphone, ShieldCheck, ArrowRight } from 'lucide-react'
+import { MessageSquare, Users, Send, Wallet, CheckCircle, Smartphone, ShieldCheck, ArrowRight, Award, Gift, Sparkles } from 'lucide-react'
 import api from '../../lib/api'
 import toast from 'react-hot-toast'
 
@@ -280,13 +280,19 @@ export default function DashboardHome() {
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-brand-dark text-lg">Active Plan: {activePlan.plan}</h3>
                 <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
-                  activePlan.isPaid ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'
+                  activePlan.isAdmin
+                    ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                    : activePlan.isPaid 
+                    ? 'bg-green-100 text-green-700' 
+                    : 'bg-purple-100 text-purple-700'
                 }`}>
-                  {activePlan.status}
+                  {activePlan.isAdmin ? '👑 ADMIN PRO (PERMANENT PAID)' : activePlan.status}
                 </span>
               </div>
               <p className="text-sm text-gray-500 mt-1">
-                {activePlan.isPaid ? (
+                {activePlan.isAdmin ? (
+                  <><strong>Lifetime Access</strong> — Growthwapi Admin Account (Permanently Paid PRO Member)</>
+                ) : activePlan.isPaid ? (
                   <><strong>₹{activePlan.price.toLocaleString()}/mo</strong> — Renews {new Date(activePlan.endDate).toLocaleDateString()}</>
                 ) : (
                   <>Trial Cap: 50 utility, 30 marketing messages | {activePlan.daysRemaining} days left</>
@@ -298,8 +304,116 @@ export default function DashboardHome() {
             to="/dashboard/wallet"
             className="bg-brand-blue/10 hover:bg-brand-blue/20 text-brand-blue px-4 py-2.5 rounded-xl font-bold text-sm transition-colors flex items-center gap-2 whitespace-nowrap"
           >
-            Manage Billing & Upgrade <ArrowRight size={16} />
+            Manage Billing & Wallet <ArrowRight size={16} />
           </Link>
+        </div>
+      )}
+
+      {/* 3+3 Loyalty Rewards Progress Card */}
+      {activePlan && (
+        <div className="bg-gradient-to-br from-white via-orange-50/25 to-amber-50/40 rounded-2xl border border-orange-200/80 shadow-xs p-6 relative overflow-hidden">
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-black text-xl shrink-0 shadow-xs">
+                🏆
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-extrabold text-brand-dark text-lg flex items-center gap-1.5">
+                    3+3 Loyalty Rewards Club
+                  </h3>
+                  <span className={`text-xs font-black px-2.5 py-0.5 rounded-full ${
+                    activePlan?.loyaltyProgress?.isRewardUnlocked
+                      ? 'bg-green-100 text-green-700 border border-green-300'
+                      : 'bg-orange-100 text-orange-700 border border-orange-300'
+                  }`}>
+                    {activePlan?.loyaltyProgress?.isRewardUnlocked ? '🎉 50% OFF UNLOCKED' : 'MILESTONE IN PROGRESS'}
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
+                  {activePlan?.loyaltyProgress?.statusText || 'Stay active for 3 consecutive months to unlock flat 50% OFF for months 4, 5 & 6!'}
+                </p>
+              </div>
+            </div>
+
+            <Link
+              to="/dashboard/wallet"
+              className="self-start md:self-auto text-xs sm:text-sm font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200 px-3.5 py-2 rounded-xl transition-colors flex items-center gap-1.5 shrink-0"
+            >
+              <span>View Loyalty Offers</span>
+              <ArrowRight size={14} />
+            </Link>
+          </div>
+
+          {/* Progress Bar Container */}
+          <div className="relative z-10 space-y-3 pt-2">
+            <div className="flex items-center justify-between text-xs font-bold text-gray-600">
+              <span className="flex items-center gap-1">
+                <span>Loyalty Streak:</span>
+                <span className="text-orange-600 font-extrabold">
+                  {activePlan?.loyaltyProgress?.consecutiveMonths || 0}/3 Months
+                </span>
+              </span>
+              <span className="text-gray-500 font-medium">
+                {activePlan?.loyaltyProgress?.progressPercent || 0}% Completed
+              </span>
+            </div>
+
+            {/* Visual Multi-step Bar */}
+            <div className="w-full bg-gray-100 rounded-full h-3.5 overflow-hidden p-0.5 border border-gray-200">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-orange-500 via-amber-500 to-green-500 transition-all duration-700 shadow-xs"
+                style={{ width: `${Math.max(8, activePlan?.loyaltyProgress?.progressPercent || 0)}%` }}
+              />
+            </div>
+
+            {/* Milestone Steps */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-center">
+              <div className={`p-2.5 rounded-xl border text-xs transition-all ${
+                (activePlan?.loyaltyProgress?.consecutiveMonths || 0) >= 1
+                  ? 'bg-orange-500/10 border-orange-300 text-orange-950 font-bold'
+                  : 'bg-gray-50 border-gray-200 text-gray-400'
+              }`}>
+                <div className="text-[10px] uppercase font-bold tracking-wider">Month 1</div>
+                <div className="text-xs font-extrabold mt-0.5">
+                  {(activePlan?.loyaltyProgress?.consecutiveMonths || 0) >= 1 ? '✅ Active' : 'Starter'}
+                </div>
+              </div>
+
+              <div className={`p-2.5 rounded-xl border text-xs transition-all ${
+                (activePlan?.loyaltyProgress?.consecutiveMonths || 0) >= 2
+                  ? 'bg-orange-500/10 border-orange-300 text-orange-950 font-bold'
+                  : 'bg-gray-50 border-gray-200 text-gray-400'
+              }`}>
+                <div className="text-[10px] uppercase font-bold tracking-wider">Month 2</div>
+                <div className="text-xs font-extrabold mt-0.5">
+                  {(activePlan?.loyaltyProgress?.consecutiveMonths || 0) >= 2 ? '✅ Active' : 'Streak'}
+                </div>
+              </div>
+
+              <div className={`p-2.5 rounded-xl border text-xs transition-all ${
+                (activePlan?.loyaltyProgress?.consecutiveMonths || 0) >= 3
+                  ? 'bg-orange-500/10 border-orange-300 text-orange-950 font-bold'
+                  : 'bg-gray-50 border-gray-200 text-gray-400'
+              }`}>
+                <div className="text-[10px] uppercase font-bold tracking-wider">Month 3</div>
+                <div className="text-xs font-extrabold mt-0.5">
+                  {(activePlan?.loyaltyProgress?.consecutiveMonths || 0) >= 3 ? '✅ Milestone' : 'Target'}
+                </div>
+              </div>
+
+              <div className={`p-2.5 rounded-xl border text-xs transition-all ${
+                activePlan?.loyaltyProgress?.isRewardUnlocked
+                  ? 'bg-green-500/15 border-green-400 text-green-950 font-bold ring-2 ring-green-400/40'
+                  : 'bg-amber-50/80 border-amber-200 text-amber-800'
+              }`}>
+                <div className="text-[10px] uppercase font-bold tracking-wider">Months 4, 5, 6</div>
+                <div className="text-xs font-black text-green-700 mt-0.5">
+                  {activePlan?.loyaltyProgress?.isRewardUnlocked ? '🎁 50% OFF UNLOCKED' : '🎁 50% OFF Reward'}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

@@ -541,7 +541,7 @@ export default function LandingPage() {
             <span className="hidden sm:inline text-white/40">|</span>
             <span className="text-white/90 font-medium">Live from <span className="font-bold text-white">1 December</span> · Use code <span className="font-black text-[#F97316] bg-white/10 px-2 py-0.5 rounded-md tracking-wider">LAUNCH50</span> for Flat <span className="font-black text-[#25D366]">50% OFF</span> · Limited Time Only</span>
             <span className="hidden sm:inline text-white/40">|</span>
-            <span className="text-white/80 font-medium">🏆 <span className="font-bold text-yellow-300">First 10 Founders</span> get a Special Mystery Gift — <span className="italic">To Be Announced!</span></span>
+            <span className="text-white/80 font-medium">🏆 <span className="font-bold text-yellow-300">First 10 Founders</span> get a Special Mystery Gift — <span className="italic font-semibold text-yellow-200">To Be Announced on 10 December!</span></span>
           </div>
         </div>
 

@@ -9,8 +9,70 @@ const PLAN_QUOTAS = {
 
 const TRIAL_CAPS = PLAN_QUOTAS.trial;
 
+// Helper to identify Growthwapi admin accounts
+async function isUserAdmin(userId, reqUser = null) {
+  try {
+    const emailsToCheck = [];
+    const phonesToCheck = [];
+
+    if (reqUser) {
+      if (reqUser.email) emailsToCheck.push(reqUser.email);
+      if (reqUser.phone) phonesToCheck.push(reqUser.phone);
+      if (reqUser.user_metadata?.phone) phonesToCheck.push(reqUser.user_metadata.phone);
+    }
+
+    if (userId) {
+      const { data: user } = await supabaseAdmin
+        .from('users')
+        .select('email, phone')
+        .eq('id', userId)
+        .maybeSingle();
+      if (user) {
+        if (user.email) emailsToCheck.push(user.email);
+        if (user.phone) phonesToCheck.push(user.phone);
+      }
+    }
+
+    for (const rawEmail of emailsToCheck) {
+      const email = (rawEmail || '').toLowerCase().trim();
+      if (
+        email === 'growthwapi@gmail.com' ||
+        email === 'sauravrai8757@gmail.com' ||
+        email.includes('growthwapi')
+      ) {
+        return true;
+      }
+    }
+
+    for (const rawPhone of phonesToCheck) {
+      const phone = (rawPhone || '').replace(/\D/g, '');
+      if (phone.endsWith('9122257780')) {
+        return true;
+      }
+    }
+
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 // Get user's active subscription (excludes wallet recharge entries)
 async function getActiveSubscription(userId) {
+  // Permanent lifetime PRO for admin account
+  if (await isUserAdmin(userId)) {
+    return {
+      id: 'admin_permanent_sub',
+      user_id: userId,
+      plan_type: 'pro',
+      status: 'active',
+      start_date: '2026-01-01T00:00:00.000Z',
+      end_date: '2099-12-31T23:59:59.000Z',
+      amount: 0,
+      payment_for: 'admin_lifetime_grant'
+    };
+  }
+
   const { data: sub } = await supabaseAdmin
     .from('subscriptions')
     .select('*')
@@ -57,6 +119,10 @@ async function getMonthlyUsage(userId) {
 
 // Check cap / quota before sending message(s)
 async function checkTrialCap(userId, category = 'utility', count = 1) {
+  if (await isUserAdmin(userId)) {
+    return { allowed: true };
+  }
+
   const { data: user } = await supabaseAdmin
     .from('users')
     .select('account_status, trial_end_date, package_type')
@@ -174,6 +240,7 @@ async function hasActiveSubscription(userId) {
 module.exports = {
   PLAN_QUOTAS,
   TRIAL_CAPS,
+  isUserAdmin,
   getActiveSubscription,
   hasActiveSubscription,
   getMonthlyUsage,

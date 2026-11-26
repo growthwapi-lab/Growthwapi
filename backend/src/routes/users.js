@@ -6,6 +6,7 @@ const {
   getTrialUsage,
   TRIAL_CAPS,
   PLAN_QUOTAS,
+  isUserAdmin,
   getActiveSubscription,
   hasActiveSubscription,
   getMonthlyUsage,
@@ -199,13 +200,110 @@ router.post('/check-eligibility', auth, async (req, res) => {
   }
 });
 
+// Helper to calculate 3+3 Loyalty Rewards progress
+async function calculateLoyaltyProgress(userId, activeSub, isAdmin) {
+  if (isAdmin) {
+    return {
+      consecutiveMonths: 3,
+      currentMonthInCycle: 3,
+      targetMonths: 3,
+      progressPercent: 100,
+      isRewardUnlocked: true,
+      rewardDiscountPercent: 50,
+      statusText: 'Admin VIP Member — 50% Loyalty Reward Active'
+    };
+  }
+
+  let count = 0;
+  try {
+    const { count: paidCount } = await supabaseAdmin
+      .from('subscriptions')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .neq('payment_for', 'wallet_recharge')
+      .in('plan_type', ['starter', 'growth', 'pro']);
+    count = paidCount || 0;
+  } catch {
+    count = activeSub ? 1 : 0;
+  }
+
+  if (activeSub && count === 0) count = 1;
+
+  const isRewardUnlocked = count >= 3;
+  const currentMonthInCycle = count > 0 ? (count <= 3 ? count : ((count - 1) % 3) + 1) : 0;
+  const progressPercent = Math.min(100, Math.round((Math.min(count, 3) / 3) * 100));
+
+  let statusText = 'Stay active for 3 consecutive months to unlock flat 50% OFF for months 4, 5 & 6!';
+  if (count === 1) {
+    statusText = 'Month 1 completed! 2 more months to unlock flat 50% OFF.';
+  } else if (count === 2) {
+    statusText = 'Month 2 completed! Just 1 more month to unlock flat 50% OFF.';
+  } else if (count >= 3) {
+    statusText = '🎉 Milestone Achieved! 50% OFF unlocked on your next 3 renewals.';
+  }
+
+  return {
+    consecutiveMonths: count,
+    currentMonthInCycle,
+    targetMonths: 3,
+    progressPercent,
+    isRewardUnlocked,
+    rewardDiscountPercent: 50,
+    statusText
+  };
+}
+
 // GET Active Plan & Quotas info for Dashboard, Wallet, Settings & Sidebar
 router.get('/active-plan', auth, async (req, res) => {
   try {
     const user = await getOrCreateUser(req.user);
-    const activeSub = await getActiveSubscription(req.user.id);
     const { utilityUsed, marketingUsed } = await getMonthlyUsage(req.user.id);
     const now = new Date();
+
+    const userEmail = (user.email || req.user.email || '').toLowerCase();
+    const userPhone = (user.phone || req.user.phone || req.user.user_metadata?.phone || '').replace(/\D/g, '');
+    const isAdminAccount = 
+      (await isUserAdmin(req.user.id, req.user)) ||
+      userEmail === 'growthwapi@gmail.com' ||
+      userEmail === 'sauravrai8757@gmail.com' ||
+      userEmail.includes('growthwapi') ||
+      userPhone.endsWith('9122257780');
+
+    // Admin Account: Permanent Lifetime PRO Plan (Never requires payment, never expires)
+    if (isAdminAccount) {
+      const proQuota = PLAN_QUOTAS.pro;
+      const loyaltyProgress = await calculateLoyaltyProgress(req.user.id, null, true);
+      return res.json({
+        plan: 'PRO',
+        planName: 'PRO (Admin Permanent)',
+        packageType: 'pro',
+        status: 'Active',
+        price: proQuota.price,
+        startDate: '2026-01-01T00:00:00.000Z',
+        endDate: '2099-12-31T23:59:59.000Z',
+        daysRemaining: 99999,
+        utilityUsed,
+        utilityQuota: proQuota.utility,
+        marketingUsed,
+        marketingQuota: proQuota.marketing,
+        baseMarketingQuota: proQuota.marketing,
+        bonusMessages: 0,
+        hasReferralOffer: false,
+        hasSetupSupport: true,
+        isPaid: true,
+        isTrial: false,
+        isExpired: false,
+        isHighestPlan: true,
+        badgeText: 'PRO Lifetime Member',
+        isAdmin: true,
+        isFounderMember: false,
+        founderRank: null,
+        loyaltyProgress
+      });
+    }
+
+    const activeSub = await getActiveSubscription(req.user.id);
+    const loyaltyProgress = await calculateLoyaltyProgress(req.user.id, activeSub, false);
 
     if (activeSub) {
       const endDate = new Date(activeSub.end_date);
@@ -217,26 +315,17 @@ router.get('/active-plan', auth, async (req, res) => {
       // Check Founder Member rank (among first 10 paid subscriptions, excluding admin accounts)
       let isFounderMember = false;
       let founderRank = null;
-      const userEmail = (user.email || req.user.email || '').toLowerCase();
-      const userPhone = (user.phone || '').replace(/\D/g, '');
-      const isAdminAccount = 
-        userEmail === 'growthwapi@gmail.com' ||
-        userEmail === 'sauravrai8757@gmail.com' ||
-        userEmail.includes('growthwapi') ||
-        userPhone.endsWith('9122257780');
 
-      if (!isAdminAccount) {
-        try {
-          const { count: priorPaidCount } = await supabaseAdmin
-            .from('subscriptions')
-            .select('*', { count: 'exact', head: true })
-            .eq('status', 'active')
-            .lte('created_at', activeSub.created_at || activeSub.start_date);
-          
-          founderRank = priorPaidCount || 1;
-          isFounderMember = founderRank <= 10;
-        } catch {}
-      }
+      try {
+        const { count: priorPaidCount } = await supabaseAdmin
+          .from('subscriptions')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'active')
+          .lte('created_at', activeSub.created_at || activeSub.start_date);
+        
+        founderRank = priorPaidCount || 1;
+        isFounderMember = founderRank <= 10;
+      } catch {}
 
       return res.json({
         plan: pkg.toUpperCase(),
@@ -261,7 +350,8 @@ router.get('/active-plan', auth, async (req, res) => {
         isHighestPlan: pkg === 'pro',
         badgeText: `${pkg.toUpperCase()} Plan`,
         isFounderMember,
-        founderRank
+        founderRank,
+        loyaltyProgress
       });
     }
 
@@ -323,7 +413,8 @@ router.get('/active-plan', auth, async (req, res) => {
       isExpired,
       isHighestPlan: false,
       badgeText: isExpired ? 'Expired' : `Trial (${daysRemaining}d left)`,
-      launchOffer
+      launchOffer,
+      loyaltyProgress
     });
   } catch (error) {
     console.error('Active plan error:', error);
@@ -335,6 +426,29 @@ router.get('/active-plan', auth, async (req, res) => {
 router.get('/trial-status', auth, async (req, res) => {
   try {
     const user = await getOrCreateUser(req.user);
+    const userEmail = (user.email || req.user.email || '').toLowerCase();
+    const userPhone = (user.phone || req.user.phone || req.user.user_metadata?.phone || '').replace(/\D/g, '');
+    const isAdminAccount = 
+      (await isUserAdmin(req.user.id, req.user)) ||
+      userEmail === 'growthwapi@gmail.com' ||
+      userEmail === 'sauravrai8757@gmail.com' ||
+      userEmail.includes('growthwapi') ||
+      userPhone.endsWith('9122257780');
+
+    if (isAdminAccount) {
+      const { utilityUsed, marketingUsed } = await getMonthlyUsage(req.user.id);
+      return res.json({
+        status: 'active',
+        daysRemaining: 99999,
+        utilityUsed,
+        utilityCap: PLAN_QUOTAS.pro.utility,
+        marketingUsed,
+        marketingCap: PLAN_QUOTAS.pro.marketing,
+        isPaid: true,
+        isTrial: false
+      });
+    }
+
     const isPaid = await hasActiveSubscription(req.user.id);
     const { utilityUsed, marketingUsed } = await getMonthlyUsage(req.user.id);
 

@@ -336,7 +336,8 @@ export default function Wallet() {
         </div>
       </div>
 
-      {/* Balance + Usage Row */}
+      {/* Balance + Recharge Row — Hidden for Admin */}
+      {!activePlan?.isAdmin && (
       <div className="grid md:grid-cols-3 gap-6">
         {/* Balance Card */}
         <div className="md:col-span-1 bg-gradient-to-br from-brand-blue to-blue-800 text-white rounded-2xl p-6 shadow-lg shadow-blue-200">
@@ -409,8 +410,10 @@ export default function Wallet() {
           </p>
         </div>
       </div>
+      )}
 
-      {/* Subscription Plans Section */}
+      {/* Subscription Plans Section — Hidden for Admin */}
+      {!activePlan?.isAdmin && (
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -573,6 +576,7 @@ export default function Wallet() {
           Secured by Razorpay. All major UPI, Credit/Debit cards & Net Banking supported.
         </p>
       </div>
+      )}
     </div>
   )
 }

@@ -44,6 +44,7 @@ export default function Wallet() {
   const [subscription, setSubscription] = useState(null)
   const [trialStatus, setTrialStatus] = useState(null)
   const [activePlan, setActivePlan] = useState(null)
+  const [loyaltyStatus, setLoyaltyStatus] = useState(null)
   const [rechargeAmount, setRechargeAmount] = useState(500)
   const [loading, setLoading] = useState(false)
   const [pageLoading, setPageLoading] = useState(true)
@@ -86,10 +87,11 @@ export default function Wallet() {
   const fetchWalletData = async () => {
     setPageLoading(true)
     try {
-      const [res, trialRes, activePlanRes] = await Promise.all([
+      const [res, trialRes, activePlanRes, loyaltyRes] = await Promise.all([
         api.get('/api/wallet/balance').catch(() => ({ data: {} })),
         api.get('/api/users/trial-status').catch(() => ({ data: null })),
         api.get('/api/users/active-plan').catch(() => ({ data: null })),
+        api.get('/api/payments/loyalty-status').catch(() => ({ data: null })),
       ])
 
       setBalance(res.data.wallet_balance || 0)
@@ -102,6 +104,7 @@ export default function Wallet() {
       if (res.data.subscription) setSubscription(res.data.subscription)
       if (trialRes.data) setTrialStatus(trialRes.data)
       if (activePlanRes.data) setActivePlan(activePlanRes.data)
+      if (loyaltyRes.data) setLoyaltyStatus(loyaltyRes.data)
     } catch {
       // Use defaults
     } finally {
@@ -206,6 +209,62 @@ export default function Wallet() {
         },
         prefill: { name: 'User' },
         theme: { color: '#1E3A8A' },
+      }
+      const rzp = new window.Razorpay(options)
+      rzp.on('payment.failed', () => toast.error('Payment failed. Please try again.'))
+      rzp.open()
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Could not initiate payment.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Handle 3-month loyalty pack purchase
+  const handle3MonthSubscribe = async (planId) => {
+    if (!loyaltyStatus?.eligible) {
+      toast.error('You need 3 consecutive paid months to unlock this offer.')
+      return
+    }
+    setLoading(true)
+    const loaded = await loadRazorpay()
+    if (!loaded) {
+      toast.error('Razorpay SDK failed to load.')
+      setLoading(false)
+      return
+    }
+
+    try {
+      const { data: order } = await api.post('/api/payments/create-3month-order', { planType: planId })
+      const plan = PLANS.find(p => p.id === planId)
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: order.amount,
+        currency: order.currency,
+        name: 'Growthwapi',
+        description: `${plan.name} 3-Month Loyalty Pack${order.loyaltyApplied ? ' (50% OFF)' : ''}`,
+        order_id: order.id,
+        handler: async (response) => {
+          try {
+            await api.post('/api/payments/verify-payment', {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              type: 'subscription_3month',
+              planType: planId,
+              durationMonths: 3,
+              amount: order.amountToPay,
+              loyaltyApplied: order.loyaltyApplied
+            })
+            toast.success(`🎉 3-Month ${plan.name} Pack activated!${order.loyaltyApplied ? ' 50% Loyalty Reward applied!' : ''}`)
+            fetchWalletData()
+            window.dispatchEvent(new Event('planUpdated'))
+          } catch (err) {
+            toast.error(err.response?.data?.error || 'Payment verification failed. Contact support.')
+          }
+        },
+        prefill: { name: 'User' },
+        theme: { color: '#16a34a' },
       }
       const rzp = new window.Razorpay(options)
       rzp.on('payment.failed', () => toast.error('Payment failed. Please try again.'))
@@ -576,6 +635,100 @@ export default function Wallet() {
           Secured by Razorpay. All major UPI, Credit/Debit cards & Net Banking supported.
         </p>
       </div>
+      )}
+
+      {/* 3+3 Loyalty Rewards — 3-Month Pack Section (always shown to non-admin paid/trial users) */}
+      {!activePlan?.isAdmin && (
+        <div className={`rounded-2xl border-2 p-6 relative overflow-hidden ${loyaltyStatus?.eligible ? 'border-green-400 bg-gradient-to-br from-green-50 via-emerald-50 to-green-50 shadow-lg shadow-green-100' : 'border-gray-200 bg-white shadow-sm'}`}>
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+            <div className="flex items-center gap-3">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0 ${loyaltyStatus?.eligible ? 'bg-green-100' : 'bg-gray-100'}`}>
+                🏆
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="font-extrabold text-brand-dark text-lg">3+3 Loyalty Rewards — 3-Month Pack</h2>
+                  {loyaltyStatus?.eligible ? (
+                    <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-green-100 text-green-800 border border-green-300">
+                      🎉 50% OFF UNLOCKED
+                    </span>
+                  ) : (
+                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+                      {loyaltyStatus?.consecutiveMonths || 0}/3 months completed
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
+                  {loyaltyStatus?.eligible
+                    ? 'You have completed 3 consecutive months! Get any plan at flat 50% OFF for the next 3 months.'
+                    : `Stay subscribed without any gap for ${3 - (loyaltyStatus?.consecutiveMonths || 0)} more month(s) to unlock flat 50% OFF on 3-Month Packs.`
+                  }
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Streak progress bar */}
+          <div className="mb-5">
+            <div className="flex justify-between text-xs font-bold text-gray-500 mb-1.5">
+              <span>Consecutive Streak</span>
+              <span>{loyaltyStatus?.consecutiveMonths || 0} / 3 months</span>
+            </div>
+            <div className="w-full bg-gray-100 rounded-full h-2.5 border border-gray-200">
+              <div
+                className={`h-full rounded-full transition-all duration-700 ${loyaltyStatus?.eligible ? 'bg-gradient-to-r from-green-400 to-emerald-500' : 'bg-gradient-to-r from-orange-400 to-amber-500'}`}
+                style={{ width: `${Math.max(8, Math.min(100, ((loyaltyStatus?.consecutiveMonths || 0) / 3) * 100))}%` }}
+              />
+            </div>
+            <p className="text-xs text-gray-400 mt-1">⚠️ Even 1 month gap resets your streak to 0.</p>
+          </div>
+
+          {/* 3-Month Plan Cards */}
+          {loyaltyStatus?.eligible ? (
+            <div className="grid md:grid-cols-3 gap-4">
+              {PLANS.map(plan => {
+                const monthlyPrice = plan.price
+                const original3Month = monthlyPrice * 3
+                const discounted3Month = Math.round(original3Month * 0.5)
+                const saving = original3Month - discounted3Month
+
+                return (
+                  <div key={plan.id} className="rounded-2xl border-2 border-green-300 bg-white p-5 flex flex-col justify-between shadow-xs">
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <h3 className="font-bold text-brand-dark text-base">{plan.name}</h3>
+                        <span className="bg-green-100 text-green-800 text-[10px] font-black px-2 py-0.5 rounded-full border border-green-300">3-MONTH PACK</span>
+                      </div>
+                      <div className="my-2">
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-2xl font-black text-green-700">₹{discounted3Month.toLocaleString()}</span>
+                          <span className="text-sm text-gray-400 line-through font-normal">₹{original3Month.toLocaleString()}</span>
+                        </div>
+                        <p className="text-xs text-green-700 font-bold mt-0.5">Save ₹{saving.toLocaleString()} | 50% OFF for 3 months</p>
+                        <p className="text-xs text-gray-500 mt-0.5">≈ ₹{Math.round(discounted3Month / 3).toLocaleString()}/mo effective</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handle3MonthSubscribe(plan.id)}
+                      disabled={loading}
+                      className="w-full mt-4 py-2.5 rounded-xl font-black bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white transition-all shadow-md shadow-green-200 disabled:opacity-50 text-sm"
+                    >
+                      {loading ? 'Processing...' : `Get 3 Months — ₹${discounted3Month.toLocaleString()}`}
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5 text-center">
+              <p className="text-sm text-gray-600 font-medium">
+                🔒 Complete <strong>{3 - (loyaltyStatus?.consecutiveMonths || 0)} more consecutive month(s)</strong> without any gap to unlock flat 50% OFF on 3-Month Packs.
+              </p>
+              <p className="text-xs text-gray-400 mt-2">All plans (Starter, Growth, Pro) qualify. No coupon code needed — discount is applied automatically.</p>
+            </div>
+          )}
+        </div>
       )}
     </div>
   )

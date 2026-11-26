@@ -3,24 +3,20 @@ const crypto = require('crypto');
 const razorpay = require('../config/razorpay');
 const auth = require('../middleware/auth');
 const { supabaseAdmin } = require('../config/supabase');
-const { getActiveSubscription, PLAN_QUOTAS, hasActiveSubscription } = require('../utils/trialLimits');
+const { getActiveSubscription, PLAN_QUOTAS, hasActiveSubscription, checkConsecutiveLoyalty } = require('../utils/trialLimits');
 const { processSubscriptionAffiliateCommission } = require('../utils/affiliateEngine');
 
 const router = express.Router();
 
-// ── LAUNCH50 & LOYALTY COUPON CONFIG ──
+// ── LAUNCH50 COUPON CONFIG ──
+// LOYALTY50 is REMOVED as a public coupon — loyalty discount is auto-applied server-side
+// based on verified consecutive months. No manual code entry required.
 const LAUNCH_COUPONS = {
   'LAUNCH50': {
     discountPercent: 50,
     validFrom: new Date('2026-12-01T00:00:00+05:30'),
     validUntil: new Date('2026-12-25T23:59:59+05:30'),
     description: 'Grand Launch Special — 50% OFF'
-  },
-  'LOYALTY50': {
-    discountPercent: 50,
-    validFrom: new Date('2026-11-01T00:00:00+05:30'),
-    validUntil: new Date('2029-12-31T23:59:59+05:30'),
-    description: '3+3 Loyalty Rewards Club — 50% OFF'
   }
 };
 
@@ -40,6 +36,74 @@ router.get('/validate-coupon', auth, async (req, res) => {
   const { code } = req.query;
   const result = validateCoupon(code);
   res.json(result);
+});
+
+// GET: Check loyalty eligibility (3 consecutive months check)
+router.get('/loyalty-status', auth, async (req, res) => {
+  try {
+    const loyalty = await checkConsecutiveLoyalty(req.user.id);
+    res.json({
+      eligible: loyalty.eligible,
+      consecutiveMonths: loyalty.consecutiveMonths,
+      longestStreak: loyalty.longestStreak,
+      message: loyalty.eligible
+        ? '🎉 You have unlocked the 3+3 Loyalty Reward! 50% OFF on any 3-month pack.'
+        : `${loyalty.consecutiveMonths || 0}/3 consecutive months completed. Keep going to unlock 50% OFF on 3-month packs!`
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 1a. Create 3-Month Subscription Order (with auto loyalty discount if eligible)
+router.post('/create-3month-order', auth, async (req, res) => {
+  const { planType } = req.body;
+  if (!PLAN_QUOTAS[planType] || planType === 'trial') {
+    return res.status(400).json({ error: 'Invalid plan type' });
+  }
+
+  try {
+    const baseMonthlyPrice = PLAN_QUOTAS[planType].price;
+    const base3MonthPrice = baseMonthlyPrice * 3;
+
+    // Check loyalty eligibility server-side (strict consecutive months check)
+    const loyalty = await checkConsecutiveLoyalty(req.user.id);
+    let amountToPay = base3MonthPrice;
+    let loyaltyApplied = null;
+
+    if (loyalty.eligible) {
+      const discountAmount = Math.round(base3MonthPrice * 0.5);
+      amountToPay = base3MonthPrice - discountAmount;
+      loyaltyApplied = {
+        discountPercent: 50,
+        discountAmount,
+        consecutiveMonths: loyalty.consecutiveMonths,
+        description: '3+3 Loyalty Reward — 50% OFF (3-Month Pack)'
+      };
+    }
+
+    const options = {
+      amount: Math.round(amountToPay * 100),
+      currency: 'INR',
+      receipt: `3mo_${Date.now()}`.substring(0, 40)
+    };
+
+    const order = await razorpay.orders.create(options);
+    res.json({
+      ...order,
+      planType,
+      durationMonths: 3,
+      amountToPay,
+      base3MonthPrice,
+      monthlyPrice: baseMonthlyPrice,
+      loyaltyApplied,
+      isLoyaltyEligible: loyalty.eligible,
+      consecutiveMonths: loyalty.consecutiveMonths
+    });
+  } catch (error) {
+    console.error('Create 3-month order error:', error);
+    res.status(500).json({ error: error.message || 'Failed to create order' });
+  }
 });
 
 // 1. Create Subscription or Upgrade Order
@@ -118,7 +182,7 @@ router.post('/create-wallet-order', auth, async (req, res) => {
 
 // 3. Verify Payment (Idempotent signature verification & DB update)
 router.post('/verify-payment', auth, async (req, res) => {
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, type, planType, amount } = req.body;
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, type, planType, amount, durationMonths, loyaltyApplied } = req.body;
 
   if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
     return res.status(400).json({ error: 'Missing payment verification params' });
@@ -151,10 +215,24 @@ router.post('/verify-payment', auth, async (req, res) => {
       });
     }
 
-    if (type === 'subscription') {
+    if (type === 'subscription' || type === 'subscription_3month') {
+      const is3Month = type === 'subscription_3month' || Number(durationMonths) === 3;
+
+      // If this is a 3-month loyalty order, re-verify server-side eligibility
+      // (never trust client-side loyaltyApplied for a discounted 3-month order)
+      if (is3Month && loyaltyApplied) {
+        const loyaltyCheck = await checkConsecutiveLoyalty(req.user.id);
+        if (!loyaltyCheck.eligible) {
+          return res.status(403).json({
+            error: 'Loyalty discount not eligible. You need 3 consecutive paid months. This payment cannot be verified with the loyalty discount.'
+          });
+        }
+      }
+
       const start_date = new Date().toISOString();
       const d = new Date();
-      d.setDate(d.getDate() + 30);
+      // 30 days for monthly, 90 days for 3-month pack
+      d.setDate(d.getDate() + (is3Month ? 90 : 30));
       const end_date = d.toISOString();
 
       // 1. Deactivate old active subscriptions
@@ -174,8 +252,10 @@ router.post('/verify-payment', auth, async (req, res) => {
           razorpay_order_id,
           razorpay_payment_id,
           razorpay_signature,
-          amount: PLAN_QUOTAS[planType]?.price || amount,
-          payment_for: 'subscription',
+          amount: amount || (is3Month ? (PLAN_QUOTAS[planType]?.price || 0) * 3 : PLAN_QUOTAS[planType]?.price),
+          payment_for: is3Month ? 'subscription_3month' : 'subscription',
+          duration_months: is3Month ? 3 : 1,
+          loyalty_discount_applied: is3Month && Boolean(loyaltyApplied),
           start_date,
           end_date
         })
@@ -193,7 +273,6 @@ router.post('/verify-payment', auth, async (req, res) => {
         .update({
           package_type: planType,
           account_status: 'active',
-          // Immediately terminate trial — set trial_end_date to now
           trial_end_date: new Date().toISOString()
         })
         .eq('id', req.user.id)
@@ -212,7 +291,9 @@ router.post('/verify-payment', auth, async (req, res) => {
 
       return res.json({
         success: true,
-        message: `🎉 Successfully subscribed to the ${planType.toUpperCase()} plan!`,
+        message: is3Month
+          ? `🎉 3-Month ${planType.toUpperCase()} Plan activated!${loyaltyApplied ? ' Loyalty 50% OFF applied.' : ''}`
+          : `🎉 Successfully subscribed to the ${planType.toUpperCase()} plan!`,
         subscription,
         user: updatedUser
       });

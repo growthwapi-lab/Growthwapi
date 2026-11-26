@@ -101,6 +101,79 @@ async function getActiveSubscription(userId) {
   return sub;
 }
 
+// Check if user has STRICTLY consecutive paid months (no gap allowed, 5-day grace period)
+// Returns { eligible: boolean, consecutiveMonths: number, longestStreak: number }
+async function checkConsecutiveLoyalty(userId) {
+  if (!userId) return { eligible: false, consecutiveMonths: 0 };
+
+  // Admin account always eligible
+  if (await isUserAdmin(userId)) {
+    return { eligible: true, consecutiveMonths: 999, longestStreak: 999 };
+  }
+
+  try {
+    // Fetch all REAL paid subscriptions (not wallet recharge, not trial, not admin grant)
+    const { data: subs, error } = await supabaseAdmin
+      .from('subscriptions')
+      .select('id, plan_type, status, start_date, end_date, payment_for, created_at')
+      .eq('user_id', userId)
+      .neq('payment_for', 'wallet_recharge')
+      .neq('payment_for', 'admin_lifetime_grant')
+      .in('plan_type', ['starter', 'growth', 'pro'])
+      .in('status', ['active', 'cancelled', 'expired'])
+      .order('start_date', { ascending: true });
+
+    if (error || !subs || subs.length === 0) {
+      return { eligible: false, consecutiveMonths: 0, longestStreak: 0 };
+    }
+
+    // Deduplicate: if same payment_id exists multiple times, keep one
+    // Sort by start_date ascending
+    const sorted = subs
+      .filter(s => s.start_date)
+      .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+
+    if (sorted.length === 0) return { eligible: false, consecutiveMonths: 0, longestStreak: 0 };
+
+    // Count consecutive streak from the END (most recent) going backwards
+    // Grace period: 5 days between end_date of previous and start_date of next
+    const GRACE_DAYS = 5;
+    const GRACE_MS = GRACE_DAYS * 24 * 60 * 60 * 1000;
+
+    let consecutiveStreak = 1; // start with the most recent subscription
+    let longestStreak = 1;
+
+    for (let i = sorted.length - 1; i > 0; i--) {
+      const current = sorted[i];
+      const previous = sorted[i - 1];
+
+      const prevEnd = new Date(previous.end_date);
+      const currStart = new Date(current.start_date);
+      const gap = currStart - prevEnd; // milliseconds
+
+      if (gap <= GRACE_MS) {
+        // Consecutive! No significant gap
+        consecutiveStreak++;
+        if (consecutiveStreak > longestStreak) longestStreak = consecutiveStreak;
+      } else {
+        // Gap found — reset streak (we count from the end, so we stop here)
+        break;
+      }
+    }
+
+    longestStreak = Math.max(longestStreak, consecutiveStreak);
+
+    return {
+      eligible: consecutiveStreak >= 3,
+      consecutiveMonths: consecutiveStreak,
+      longestStreak
+    };
+  } catch (err) {
+    console.error('checkConsecutiveLoyalty error:', err);
+    return { eligible: false, consecutiveMonths: 0, longestStreak: 0 };
+  }
+}
+
 // Get monthly outbound message usage for user
 async function getMonthlyUsage(userId) {
   const month = new Date().toISOString().slice(0, 7);
@@ -245,5 +318,6 @@ module.exports = {
   hasActiveSubscription,
   getMonthlyUsage,
   checkTrialCap,
-  checkTrialEligibility
+  checkTrialEligibility,
+  checkConsecutiveLoyalty
 };

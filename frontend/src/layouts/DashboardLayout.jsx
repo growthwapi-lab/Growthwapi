@@ -5,12 +5,42 @@ import { useAuth } from '../contexts/AuthContext'
 import api from '../lib/api'
 import toast from 'react-hot-toast'
 
-// Play a clean two-tone notification chime using Web Audio API (no external file needed)
-function playNotificationSound() {
+// Shared AudioContext unlocked on first user gesture so background polling can play sound
+let sharedAudioCtx = null
+
+function getOrUnlockAudioContext() {
   try {
     const AudioCtx = window.AudioContext || window.webkitAudioContext
-    if (!AudioCtx) return
-    const ctx = new AudioCtx()
+    if (!AudioCtx) return null
+    if (!sharedAudioCtx) {
+      sharedAudioCtx = new AudioCtx()
+    }
+    if (sharedAudioCtx.state === 'suspended') {
+      sharedAudioCtx.resume().catch(() => {})
+    }
+    return sharedAudioCtx
+  } catch {
+    return null
+  }
+}
+
+// Unlock audio on first click/tap/keypress anywhere in the app
+if (typeof window !== 'undefined') {
+  const unlock = () => {
+    getOrUnlockAudioContext()
+  }
+  window.addEventListener('pointerdown', unlock, { once: true, passive: true })
+  window.addEventListener('keydown', unlock, { once: true, passive: true })
+}
+
+// Play a clean two-tone notification chime using unlocked Web Audio API
+async function playNotificationSound() {
+  try {
+    const ctx = getOrUnlockAudioContext()
+    if (!ctx) return
+    if (ctx.state === 'suspended') {
+      await ctx.resume()
+    }
     const now = ctx.currentTime
 
     const playTone = (freq, startOffset, duration) => {
@@ -19,7 +49,7 @@ function playNotificationSound() {
       osc.type = 'sine'
       osc.frequency.setValueAtTime(freq, now + startOffset)
       gain.gain.setValueAtTime(0.001, now + startOffset)
-      gain.gain.exponentialRampToValueAtTime(0.14, now + startOffset + 0.02)
+      gain.gain.exponentialRampToValueAtTime(0.28, now + startOffset + 0.02)
       gain.gain.exponentialRampToValueAtTime(0.001, now + startOffset + duration)
       osc.connect(gain)
       gain.connect(ctx.destination)
@@ -27,8 +57,8 @@ function playNotificationSound() {
       osc.stop(now + startOffset + duration)
     }
 
-    playTone(880, 0, 0.14)
-    playTone(1174.66, 0.12, 0.22)
+    playTone(880, 0, 0.16)
+    playTone(1174.66, 0.14, 0.25)
   } catch {
     // Ignore autoplay restrictions before user interaction
   }

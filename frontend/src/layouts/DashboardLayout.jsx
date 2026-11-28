@@ -1,8 +1,38 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
-import { MessageSquare, Users, Send, BarChart2, Wallet, Settings, LogOut, Menu, X, FileText, Code, Bot, ShieldCheck, Award, UserPlus, Compass, BookOpen } from 'lucide-react'
+import { MessageSquare, Users, Send, BarChart2, Wallet, Settings, LogOut, Menu, X, FileText, Code, Bot, ShieldCheck, Award, UserPlus, Compass, BookOpen, Bell } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../lib/api'
+import toast from 'react-hot-toast'
+
+// Play a clean two-tone notification chime using Web Audio API (no external file needed)
+function playNotificationSound() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext
+    if (!AudioCtx) return
+    const ctx = new AudioCtx()
+    const now = ctx.currentTime
+
+    const playTone = (freq, startOffset, duration) => {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(freq, now + startOffset)
+      gain.gain.setValueAtTime(0.001, now + startOffset)
+      gain.gain.exponentialRampToValueAtTime(0.14, now + startOffset + 0.02)
+      gain.gain.exponentialRampToValueAtTime(0.001, now + startOffset + duration)
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.start(now + startOffset)
+      osc.stop(now + startOffset + duration)
+    }
+
+    playTone(880, 0, 0.14)
+    playTone(1174.66, 0.12, 0.22)
+  } catch {
+    // Ignore autoplay restrictions before user interaction
+  }
+}
 
 function LaunchOfferCountdown({ deadline, isUrgent, isExpiredTrial }) {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 })
@@ -52,6 +82,140 @@ export default function DashboardLayout() {
     } catch { return null }
   })
   const [isAdmin, setIsAdmin] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [notifPermission, setNotifPermission] = useState(() =>
+    typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'
+  )
+  const notifiedIdsRef = useRef(new Set())
+  const baseTitleRef = useRef(document.title || 'Growthwapi')
+  const pathnameRef = useRef(location.pathname)
+
+  useEffect(() => {
+    pathnameRef.current = location.pathname
+    if (location.pathname.startsWith('/dashboard/inbox')) {
+      setUnreadCount(0)
+      document.title = baseTitleRef.current
+      try {
+        localStorage.setItem('gw_last_seen_inbox_at', new Date().toISOString())
+      } catch {}
+    }
+  }, [location.pathname])
+
+  const requestNotificationPermission = async () => {
+    if (typeof Notification === 'undefined') {
+      toast.error('Notifications are not supported on this browser.')
+      return
+    }
+    try {
+      const perm = await Notification.requestPermission()
+      setNotifPermission(perm)
+      if (perm === 'granted') {
+        playNotificationSound()
+        toast.success('🔔 Inbox alerts enabled! You will be notified for new messages.')
+      } else if (perm === 'denied') {
+        toast.error('Notification permission blocked. Please allow it in browser site settings.')
+      }
+    } catch {
+      toast.error('Could not enable notifications.')
+    }
+  }
+
+  // Poll for new inbound WhatsApp messages every 10 seconds
+  useEffect(() => {
+    if (!user) return
+
+    // Initialize baseline timestamp on first visit so old messages don't trigger alerts
+    try {
+      if (!localStorage.getItem('gw_last_seen_inbox_at')) {
+        localStorage.setItem('gw_last_seen_inbox_at', new Date().toISOString())
+      }
+    } catch {}
+
+    const checkNewMessages = async () => {
+      try {
+        const res = await api.get('/api/whatsapp/messages')
+        const msgs = Array.isArray(res.data) ? res.data : []
+        const lastSeenStr = localStorage.getItem('gw_last_seen_inbox_at') || new Date(0).toISOString()
+        const lastSeenTime = new Date(lastSeenStr).getTime()
+
+        const unreadInbound = msgs.filter(m =>
+          m.direction === 'inbound' &&
+          m.sent_at &&
+          new Date(m.sent_at).getTime() > lastSeenTime
+        )
+
+        const isOnInbox = pathnameRef.current.startsWith('/dashboard/inbox')
+        if (isOnInbox) {
+          // If already viewing Inbox, update last seen and keep unread badge 0
+          setUnreadCount(0)
+          document.title = baseTitleRef.current
+          if (unreadInbound.length > 0) {
+            localStorage.setItem('gw_last_seen_inbox_at', new Date().toISOString())
+          }
+        } else {
+          setUnreadCount(unreadInbound.length)
+          document.title = unreadInbound.length > 0
+            ? `(${unreadInbound.length}) New WhatsApp Message | Growthwapi`
+            : baseTitleRef.current
+        }
+
+        // Trigger alert only once per newly arrived inbound message
+        const newlyArrived = unreadInbound.filter(m => !notifiedIdsRef.current.has(m.id))
+        if (newlyArrived.length > 0) {
+          newlyArrived.forEach(m => notifiedIdsRef.current.add(m.id))
+          const latest = newlyArrived[0]
+          const senderLabel = latest.from_number || 'Customer'
+          const preview = (latest.content || 'New message').slice(0, 70)
+
+          playNotificationSound()
+
+          if (!isOnInbox) {
+            toast(
+              (t) => (
+                <div
+                  onClick={() => {
+                    toast.dismiss(t.id)
+                    navigate('/dashboard/inbox')
+                  }}
+                  className="cursor-pointer flex items-start gap-2.5"
+                >
+                  <span className="text-lg leading-none">💬</span>
+                  <div className="text-xs">
+                    <p className="font-bold text-gray-900">New message from {senderLabel}</p>
+                    <p className="text-gray-600 truncate max-w-[220px]">{preview}</p>
+                    <p className="text-brand-orange font-semibold mt-0.5">Tap to open Inbox →</p>
+                  </div>
+                </div>
+              ),
+              { duration: 5000 }
+            )
+          }
+
+          if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && (document.hidden || !isOnInbox)) {
+            const n = new Notification(`New WhatsApp from ${senderLabel}`, {
+              body: preview,
+              icon: '/logo.png.png',
+              tag: `gw-msg-${latest.id}`,
+            })
+            n.onclick = () => {
+              window.focus()
+              navigate('/dashboard/inbox')
+              n.close()
+            }
+          }
+        }
+      } catch {
+        // Silent fail on background poll
+      }
+    }
+
+    checkNewMessages()
+    const interval = setInterval(checkNewMessages, 10000)
+    return () => {
+      clearInterval(interval)
+      document.title = baseTitleRef.current
+    }
+  }, [user, navigate])
 
   const ADMIN_EMAILS = ['sauravrai8757@gmail.com', 'growthwapi@gmail.com']
   const userEmail = (user?.email || '').toLowerCase()
@@ -88,7 +252,7 @@ export default function DashboardLayout() {
   const navItems = isAgent
     ? [
         { name: 'Dashboard', path: '/dashboard', icon: BarChart2, exact: true },
-        { name: 'Inbox', path: '/dashboard/inbox', icon: MessageSquare, badge: 'LIVE' },
+        { name: 'Inbox', path: '/dashboard/inbox', icon: MessageSquare, badge: unreadCount > 0 ? String(unreadCount) : 'LIVE', isAlertBadge: unreadCount > 0 },
         { name: 'Contacts', path: '/dashboard/contacts', icon: Users },
         { name: 'Templates', path: '/dashboard/templates', icon: FileText },
         { name: 'Broadcast', path: '/dashboard/broadcast', icon: Send },
@@ -97,7 +261,7 @@ export default function DashboardLayout() {
       ]
     : [
         { name: 'Dashboard', path: '/dashboard', icon: BarChart2, exact: true },
-        { name: 'Inbox', path: '/dashboard/inbox', icon: MessageSquare },
+        { name: 'Inbox', path: '/dashboard/inbox', icon: MessageSquare, badge: unreadCount > 0 ? String(unreadCount) : '', isAlertBadge: unreadCount > 0 },
         { name: 'AI Agent', path: '/dashboard/ai-agent', icon: Bot },
         { name: 'Contacts', path: '/dashboard/contacts', icon: Users },
         { name: 'Templates', path: '/dashboard/templates', icon: FileText },
@@ -181,7 +345,11 @@ export default function DashboardLayout() {
                 <item.icon size={20} />
                 <span className="flex-1 truncate">{item.name}</span>
                 {item.badge && (
-                  <span className="text-[9px] font-black tracking-wider px-1.5 py-0.5 rounded-md bg-amber-400 text-gray-900 shadow-2xs">
+                  <span className={`text-[9px] font-black tracking-wider px-1.5 py-0.5 rounded-md shadow-2xs ${
+                    item.isAlertBadge
+                      ? 'bg-red-500 text-white animate-pulse'
+                      : 'bg-amber-400 text-gray-900'
+                  }`}>
                     {item.badge}
                   </span>
                 )}
@@ -190,6 +358,15 @@ export default function DashboardLayout() {
           </nav>
 
           <div className="p-4 border-t border-gray-200">
+            {notifPermission === 'default' && (
+              <button
+                onClick={requestNotificationPermission}
+                className="w-full mb-3 flex items-center justify-center gap-2 px-3 py-2 bg-orange-50 hover:bg-orange-100 text-brand-orange border border-orange-200 rounded-lg transition-colors text-xs font-bold"
+              >
+                <Bell size={15} />
+                Enable Message Alerts
+              </button>
+            )}
             <div className="mb-4 px-3 flex items-center gap-3">
               <div className={`w-10 h-10 rounded-full text-white flex items-center justify-center font-bold shrink-0 ${(isAdmin || activePlan?.isAdmin) ? 'bg-gradient-to-br from-amber-500 to-orange-600' : 'bg-brand-blue'}`}>
                 {user?.email?.charAt(0).toUpperCase()}
@@ -217,11 +394,37 @@ export default function DashboardLayout() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Mobile Header */}
-        <header className="lg:hidden h-16 bg-white border-b border-gray-200 flex items-center px-4">
-          <button onClick={() => setSidebarOpen(true)} className="text-gray-600 p-2">
-            <Menu size={24} />
-          </button>
-          <span className="ml-4 font-bold text-brand-dark">Dashboard</span>
+        <header className="lg:hidden h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4">
+          <div className="flex items-center">
+            <button onClick={() => setSidebarOpen(true)} className="text-gray-600 p-2">
+              <Menu size={24} />
+            </button>
+            <span className="ml-3 font-bold text-brand-dark">Growthwapi</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {notifPermission === 'default' && (
+              <button
+                onClick={requestNotificationPermission}
+                className="flex items-center gap-1 px-2.5 py-1.5 bg-orange-50 text-brand-orange border border-orange-200 rounded-lg text-xs font-bold"
+                title="Enable message alerts"
+              >
+                <Bell size={14} />
+                <span>Alerts</span>
+              </button>
+            )}
+            <Link
+              to="/dashboard/inbox"
+              className="relative p-2 text-gray-600 hover:text-brand-orange rounded-lg"
+              title="Open Inbox"
+            >
+              <MessageSquare size={22} />
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center animate-pulse">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </Link>
+          </div>
         </header>
 
         {/* Launch Urgency Countdown Banner */}
